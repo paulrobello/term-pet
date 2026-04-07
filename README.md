@@ -41,19 +41,19 @@ A terminal pet that monitors your Claude Code sessions and generates personality
 
 **ASCII mode — live commentary**
 
-<img src="https://raw.githubusercontent.com/paulrobello/tpet/main/pet-ascii-screenshot.png" alt="ASCII mode live session" width="600">
+<img src="https://raw.githubusercontent.com/paulrobello/term-pet/main/pet-ascii-screenshot.png" alt="ASCII mode live session" width="600">
 
 **ASCII mode — pet details card**
 
-<img src="https://raw.githubusercontent.com/paulrobello/tpet/main/pet-ascii-details-screenshot.png" alt="ASCII mode details card" width="600">
+<img src="https://raw.githubusercontent.com/paulrobello/term-pet/main/pet-ascii-details-screenshot.png" alt="ASCII mode details card" width="600">
 
 **Sixel mode — live commentary**
 
-<img src="https://raw.githubusercontent.com/paulrobello/tpet/main/pet-sixel-screenshot.png" alt="Sixel mode live session" width="600">
+<img src="https://raw.githubusercontent.com/paulrobello/term-pet/main/pet-sixel-screenshot.png" alt="Sixel mode live session" width="600">
 
 **Sixel mode — pet details card**
 
-<img src="https://raw.githubusercontent.com/paulrobello/tpet/main/pet-sixel-details-screenshot.png" alt="Sixel mode details card" width="600">
+<img src="https://raw.githubusercontent.com/paulrobello/term-pet/main/pet-sixel-details-screenshot.png" alt="Sixel mode details card" width="600">
 
 ## About
 
