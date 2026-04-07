@@ -36,6 +36,6 @@ Or just try it without installing:
 uvx --from term-pet tpet
 ```
 
-GitHub: https://github.com/paulrobello/tpet
+GitHub: https://github.com/paulrobello/term-pet
 
 MIT licensed. Would love feedback, especially on the multi-provider config approach and the rendering pipeline.

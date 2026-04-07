@@ -6,7 +6,7 @@ Show HN: Tpet -- A terminal pet that roasts your coding sessions
 
 ## URL
 
-https://github.com/paulrobello/tpet
+https://github.com/paulrobello/term-pet
 
 ## Comment / Description
 
@@ -27,6 +27,6 @@ It's been surprisingly motivating to have a Legendary creature with 95 SNARK jud
 
 Install: uv tool install term-pet (or uvx --from term-pet tpet to try without installing)
 
-Repo: https://github.com/paulrobello/tpet
+Repo: https://github.com/paulrobello/term-pet
 
 Happy to answer questions about the architecture or the Agent SDK integration.
