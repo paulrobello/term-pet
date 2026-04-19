@@ -12,6 +12,7 @@ class Rarity(StrEnum):
     COMMON = "COMMON"
     UNCOMMON = "UNCOMMON"
     RARE = "RARE"
+    EPIC = "EPIC"
     LEGENDARY = "LEGENDARY"
 
     @property
@@ -21,7 +22,8 @@ class Rarity(StrEnum):
             Rarity.COMMON: "\u2605",
             Rarity.UNCOMMON: "\u2605\u2605",
             Rarity.RARE: "\u2605\u2605\u2605",
-            Rarity.LEGENDARY: "\u2605\u2605\u2605\u2605",
+            Rarity.EPIC: "\u2605\u2605\u2605\u2605",
+            Rarity.LEGENDARY: "\u2605\u2605\u2605\u2605\u2605",
         }
         return star_map[self]
 
@@ -32,6 +34,7 @@ class Rarity(StrEnum):
             Rarity.COMMON: "dim",
             Rarity.UNCOMMON: "green",
             Rarity.RARE: "yellow",
+            Rarity.EPIC: "medium_purple1",
             Rarity.LEGENDARY: "bright_magenta",
         }
         return color_map[self]
@@ -43,6 +46,7 @@ class Rarity(StrEnum):
             Rarity.COMMON: (20, 60),
             Rarity.UNCOMMON: (40, 75),
             Rarity.RARE: (60, 90),
+            Rarity.EPIC: (70, 95),
             Rarity.LEGENDARY: (80, 99),
         }
         return range_map[self]
@@ -53,7 +57,8 @@ DEFAULT_RARITY_WEIGHTS.update(
         Rarity.COMMON: 60,
         Rarity.UNCOMMON: 25,
         Rarity.RARE: 10,
-        Rarity.LEGENDARY: 5,
+        Rarity.EPIC: 3,
+        Rarity.LEGENDARY: 2,
     }
 )
 

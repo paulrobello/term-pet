@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **EPIC rarity tier** between `RARE` and `LEGENDARY` — stats 70-95, 4 stars, color `medium_purple1`.
+  `LEGENDARY` bumped from 4 to 5 stars to keep the tier progression monotonic. Default
+  `rarity_weights` rebalanced from 60/25/10/5 to 60/25/10/3/2 (totals still 100).
 - **Session token/cost tracking** — `SessionUsage` dataclass in `commentary/generator.py` accumulates
   input tokens, output tokens, total cost, and API call count across all LLM calls; summary displayed on exit
 - **Graphical art modes** (`--art-mode pixel-art`, `--art-mode sixel-art`) — generate and display AI-drawn

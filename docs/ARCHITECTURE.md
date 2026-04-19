@@ -291,7 +291,7 @@ Each iteration:
 |-------|------|-------------|
 | `name` | `str` | Generated creature name |
 | `creature_type` | `str` | Species (e.g., axolotl, phoenix) |
-| `rarity` | `Rarity` | Common / Uncommon / Rare / Legendary |
+| `rarity` | `Rarity` | Common / Uncommon / Rare / Epic / Legendary |
 | `personality` | `str` | 2-3 sentence personality summary |
 | `backstory` | `str` | 3-5 sentence origin story |
 | `ascii_art` | `list[str]` | 4 or 6 animation frames (idle, shift, blink variants, react, sleep) |
@@ -302,14 +302,15 @@ Each iteration:
 | `last_comment` | `str \| None` | Most recent comment |
 | `comment_history` | `list[str]` | Rolling history (max 20) |
 
-**`Rarity`** is a `StrEnum` with four tiers. Each tier has associated display properties (stars, color) and a stat range. Selection uses weighted random sampling with configurable weights (default: 60/25/10/5).
+**`Rarity`** is a `StrEnum` with five tiers. Each tier has associated display properties (stars, color) and a stat range. Selection uses weighted random sampling with configurable weights (default: 60/25/10/3/2).
 
 | Rarity | Stat Range | Stars | Color |
 |--------|-----------|-------|-------|
 | COMMON | 20-60 | ★ | dim |
 | UNCOMMON | 40-75 | ★★ | green |
 | RARE | 60-90 | ★★★ | yellow |
-| LEGENDARY | 80-99 | ★★★★ | bright_magenta |
+| EPIC | 70-95 | ★★★★ | medium_purple1 |
+| LEGENDARY | 80-99 | ★★★★★ | bright_magenta |
 
 **Stats** are personality-driven. The five stat names are fixed: **HUMOR**, **PATIENCE**, **CHAOS**, **WISDOM**, **SNARK**. During pet generation, the LLM generates stat values to match the creature's personality. Values are clamped to the rarity's stat range. If the LLM fails to produce valid stats, `generate_stats()` in `models/stats.py` falls back to random sampling within the rarity range.
 
@@ -373,11 +374,11 @@ Each pipeline has an independent `PipelineProviderConfig` that specifies the `pr
 | `bubble_placement` | `bottom` | Speech bubble position relative to art: `top`, `right`, or `bottom` |
 | `seed` | current timestamp | Random seed for pet generation |
 | `stat_config` | (see below) | Stat generation settings |
-| `rarity_weights` | 60/25/10/5 | Rarity selection weights |
+| `rarity_weights` | 60/25/10/3/2 | Rarity selection weights |
 
 **`stat_config`** is a nested `StatConfig` object with `names` (default: the 5 standard stat names) and `pool_size` (default: 5). These control which stats are generated when the LLM fails to produce them.
 
-**`rarity_weights`** maps each `Rarity` tier to a selection weight, defaulting to COMMON=60, UNCOMMON=25, RARE=10, LEGENDARY=5.
+**`rarity_weights`** maps each `Rarity` tier to a selection weight, defaulting to COMMON=60, UNCOMMON=25, RARE=10, EPIC=3, LEGENDARY=2.
 
 ### Profile Management
 
