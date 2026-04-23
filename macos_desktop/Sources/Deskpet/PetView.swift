@@ -11,6 +11,7 @@ final class PetView: NSView {
     var onMouseDown: ((NSPoint) -> Void)?
     var onMouseDragged: ((NSPoint) -> Void)?
     var onMouseUp: ((NSPoint) -> Void)?
+    var onDoubleClick: (() -> Void)?
 
     override var isFlipped: Bool { false }
 
@@ -30,6 +31,10 @@ final class PetView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        if event.clickCount >= 2 {
+            onDoubleClick?()
+            return
+        }
         onMouseDown?(event.locationInWindow)
     }
 

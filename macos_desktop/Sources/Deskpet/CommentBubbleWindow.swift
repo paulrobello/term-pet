@@ -3,13 +3,13 @@ import AppKit
 /// A borderless floating window with a rounded speech-bubble look. Shows
 /// short text over the pet for a few seconds, then fades out.
 final class CommentBubbleWindow: NSWindow {
-    private let label = NSTextField(labelWithString: "")
+    private let label = NSTextField(wrappingLabelWithString: "")
     private let container = NSVisualEffectView()
     private var hideWorkItem: DispatchWorkItem?
 
     private let horizontalPad: CGFloat = 10
     private let verticalPad: CGFloat = 6
-    private let maxWidth: CGFloat = 260
+    private let maxWidth: CGFloat = 200
     private let minWidth: CGFloat = 40
 
     init() {
@@ -36,7 +36,7 @@ final class CommentBubbleWindow: NSWindow {
 
         label.font = NSFont.systemFont(ofSize: 11, weight: .medium)
         label.textColor = .labelColor
-        label.maximumNumberOfLines = 3
+        label.maximumNumberOfLines = 6
         label.lineBreakMode = .byWordWrapping
         label.cell?.wraps = true
         label.cell?.usesSingleLineMode = false

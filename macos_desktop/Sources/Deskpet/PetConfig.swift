@@ -23,6 +23,13 @@ enum PetConfig {
     /// "Pet" if the file can't be read or the field is missing.
     static let petName: String = readPetName()
 
+    /// Short personality summary ("bio"). May be empty if profile.yaml is
+    /// missing or the field isn't present.
+    static let personality: String = readFoldedScalar(key: "personality")
+
+    /// Origin story. May be empty if unavailable.
+    static let backstory: String = readFoldedScalar(key: "backstory")
+
     private static func readPetName() -> String {
         guard let content = try? String(contentsOf: profileURL, encoding: .utf8) else {
             return "Pet"
@@ -36,6 +43,35 @@ enum PetConfig {
             if !value.isEmpty { return value }
         }
         return "Pet"
+    }
+
+    /// Reads a top-level YAML scalar that may be folded across multiple
+    /// whitespace-indented continuation lines (PyYAML's default block style
+    /// for long strings). Continuation ends at the next non-indented line.
+    private static func readFoldedScalar(key: String) -> String {
+        guard let content = try? String(contentsOf: profileURL, encoding: .utf8) else {
+            return ""
+        }
+        let lines = content.components(separatedBy: "\n")
+        let prefix = "\(key):"
+        guard let startIdx = lines.firstIndex(where: { $0.hasPrefix(prefix) }) else {
+            return ""
+        }
+        var parts: [String] = []
+        let head = lines[startIdx]
+            .dropFirst(prefix.count)
+            .trimmingCharacters(in: .whitespaces)
+        if !head.isEmpty { parts.append(String(head)) }
+        var i = startIdx + 1
+        while i < lines.count {
+            let line = lines[i]
+            if line.isEmpty { break }
+            guard let first = line.first, first.isWhitespace else { break }
+            parts.append(line.trimmingCharacters(in: .whitespaces))
+            i += 1
+        }
+        return parts.joined(separator: " ")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
     }
 
     /// Term-pet's sprite filename convention: `{petName}_frame_{N}.png`.

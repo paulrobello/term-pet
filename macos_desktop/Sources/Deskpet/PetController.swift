@@ -15,6 +15,7 @@ final class PetController {
     private let view: PetView
     private let bubble = CommentBubbleWindow()
     private var commentBus: CommentBus?
+    private var lastComment: String?
 
     private var state: PetState = .idle
     private var facesRight: Bool = true
@@ -26,6 +27,30 @@ final class PetController {
     private var dragOffset = CGPoint.zero
 
     private var currentSurfaceID: CGWindowID? = nil
+
+    /// User toggles. Flipping these off mid-state freezes the current
+    /// activity cleanly (walk → idle, fall → idle). Persisted in
+    /// UserDefaults so preferences survive restarts.
+    private static let gravityKey = "deskpet.gravityEnabled"
+    private static let walkKey = "deskpet.walkingEnabled"
+
+    var gravityEnabled: Bool = (UserDefaults.standard.object(forKey: "deskpet.gravityEnabled") as? Bool) ?? true {
+        didSet {
+            UserDefaults.standard.set(gravityEnabled, forKey: Self.gravityKey)
+            if !gravityEnabled && state == .falling {
+                velocity = .zero
+                enter(.idle)
+            }
+        }
+    }
+    var walkingEnabled: Bool = (UserDefaults.standard.object(forKey: "deskpet.walkingEnabled") as? Bool) ?? true {
+        didSet {
+            UserDefaults.standard.set(walkingEnabled, forKey: Self.walkKey)
+            if !walkingEnabled && state == .walking {
+                enter(.idle)
+            }
+        }
+    }
 
     /// Wall-clock deadline for the "awake" period. While `Date() < awakeUntil`
     /// the pet will not fall asleep spontaneously; only walks and idles.
@@ -68,6 +93,7 @@ final class PetController {
         view.onMouseDown = { [weak self] _ in self?.beginDrag() }
         view.onMouseDragged = { [weak self] pt in self?.updateDrag(mouse: pt) }
         view.onMouseUp = { [weak self] _ in self?.endDrag() }
+        view.onDoubleClick = { [weak self] in self?.handleDoubleClick() }
 
         updateSprite()
         window.orderFront(nil)
@@ -98,20 +124,20 @@ final class PetController {
 
         switch state {
         case .idle:
-            if !maintainSurface(surfaces: surfaces) {
+            if !maintainSurface(surfaces: surfaces) && gravityEnabled {
                 enter(.falling)
             } else if stateElapsed >= stateDuration {
                 transitionFromIdle()
             }
         case .walking:
-            if !maintainSurface(surfaces: surfaces) {
+            if !maintainSurface(surfaces: surfaces) && gravityEnabled {
                 enter(.falling)
             } else {
                 walkStep(surfaces: surfaces)
                 if stateElapsed >= stateDuration { enter(.idle) }
             }
         case .sleeping:
-            if !maintainSurface(surfaces: surfaces) {
+            if !maintainSurface(surfaces: surfaces) && gravityEnabled {
                 enter(.falling)
             } else if stateElapsed >= stateDuration {
                 enter(.idle)
@@ -167,7 +193,12 @@ final class PetController {
             if maxX <= surface.rect.minX || minX >= surface.rect.maxX {
                 window.setFrameOrigin(origin)
                 currentSurfaceID = nil
-                enter(.falling)
+                if gravityEnabled {
+                    enter(.falling)
+                } else {
+                    facesRight.toggle()
+                    enter(.idle)
+                }
                 return
             }
         } else if let vf = NSScreen.main?.visibleFrame {
@@ -246,6 +277,14 @@ final class PetController {
     // MARK: - State transitions
 
     private func transitionFromIdle() {
+        if !walkingEnabled {
+            if !isAwake && Double.random(in: 0..<1) < 0.15 {
+                enter(.sleeping)
+            } else {
+                enter(.idle)
+            }
+            return
+        }
         if isAwake {
             // Awake: never sleep spontaneously. Walk or stay idle.
             if Double.random(in: 0..<1) < 0.6 {
@@ -321,7 +360,22 @@ final class PetController {
             }
         }
         if let comment = event.comment, !comment.isEmpty {
+            lastComment = comment
             bubble.show(text: comment, above: window)
+        }
+    }
+
+    /// Double-click on the pet replays the most recent comment. The preceding
+    /// single-click in the double-click sequence has already started (and
+    /// ended) a drag — cancel that transient fall/drag state so the pet holds
+    /// still while the bubble is re-shown.
+    private func handleDoubleClick() {
+        if state == .dragging || state == .falling {
+            velocity = .zero
+            enter(.idle)
+        }
+        if let text = lastComment, !text.isEmpty {
+            bubble.show(text: text, above: window)
         }
     }
 
@@ -350,6 +404,10 @@ final class PetController {
     private func endDrag() {
         wake()
         velocity = .zero
-        enter(.falling)
+        if gravityEnabled {
+            enter(.falling)
+        } else {
+            enter(.idle)
+        }
     }
 }
