@@ -89,15 +89,34 @@ def _sprite_layout_instructions_10() -> str:
         "- Row 4, Left: Walk stride A — the character is mid-step with its front foot "
         "planted and the back foot lifted slightly off the ground, body leaning a little "
         "forward. Facing to the right. Eyes open.\n"
-        "- Row 4, Right: Walk stride B — the opposite stride. Back foot now planted, "
-        "front foot lifted and extended forward. Same facing direction as Row 4 Left. "
-        "Eyes open.\n"
-        "- Row 5, Left: Falling — the character is airborne, body slightly tilted, "
-        "limbs splayed outward in a startled posture. Mouth open in an 'oh no' expression. "
-        "No ground under its feet in this panel.\n"
-        "- Row 5, Right: Stunned — the character has landed and is dazed. Body on or near "
-        "the ground, eyes drawn as two small X shapes, two or three small yellow star "
-        "or asterisk shapes orbiting the head. Mouth slightly open.\n\n"
+        "- Row 4, Right: Walk stride B — FACING TO THE RIGHT, the SAME direction as "
+        "Row 4 Left. Do NOT flip or mirror the character horizontally. Only the legs "
+        "alternate: the back foot is now planted, the front foot is lifted and "
+        "extended forward. Eyes open.\n"
+        "- Row 5, Left: Falling — the character is airborne, no ground under its feet. "
+        "If the creature has wings and can fly (bird, dragon, fairy, bat, etc.), it is "
+        "gliding calmly downward with wings spread wide and a composed expression, "
+        "looking toward the ground. Otherwise, body slightly tilted with limbs splayed "
+        "outward in a startled posture and mouth open in an 'oh no' expression.\n"
+        "- Row 5, Right: Stunned / landed — the defeated pose varies by body type:\n"
+        "  - If the creature can fly: landed neatly on the ground with wings folded "
+        "against its body and a neutral settled expression (not dazed).\n"
+        "  - If squishy or gooey (blob, slime, jelly): SPLATTED into a flat puddle, "
+        "body flattened and spreading outward with a few droplets splashing to the sides.\n"
+        "  - If brittle or crystalline (crystal, glass, shell): SHATTERED into several "
+        "angular shards scattered around the landing spot, with small crack lines.\n"
+        "  - If metallic or mechanical (robot, tin): dented and short-circuiting on "
+        "the ground with small black smoke puffs and a few yellow spark shapes around it.\n"
+        "  - If fiery or made of flame: the flame flickered down to glowing embers "
+        "and thin smoke wisps, body low and dim.\n"
+        "  - If cloud-like or fluffy (cloud, plush, feathered): POOFED into a small "
+        "puff of fluff or feathers scattered around a deflated body.\n"
+        "  - If ghostly, gaseous, or ethereal: DISSIPATING into translucent wisps "
+        "drifting upward from a faint body outline.\n"
+        "  - If plant-like or leafy: WILTED, body drooped on the ground with a few "
+        "leaves or petals scattered around it.\n"
+        "  - Otherwise: dazed — body on or near the ground, eyes as two small X shapes, "
+        "2–3 small yellow star shapes floating around its head, mouth slightly open.\n\n"
         "Style: Clean pixel art, cute and charming, suitable for a desktop pet. "
         "The creature must look identical across all 10 frames (same proportions, colors, "
         "style, outline). Only the expression, pose, and small animation details should "
@@ -272,23 +291,44 @@ _EDIT_PROMPTS_10: dict[int, tuple[str, str]] = {
     ),
     7: (
         "walk-b",
-        "Make the character look like it's mid-step in the opposite stride — back "
-        "foot planted, front foot lifted and extended forward. Still facing to the "
-        "right. Eyes stay open. Keep the same character, same size, same style, "
-        "same colors.",
+        "Make the character look like it's mid-step in the alternate stride. "
+        "IMPORTANT: the character must be FACING TO THE RIGHT — the SAME direction "
+        "as the previous walk frame. Do NOT flip or mirror the character "
+        "horizontally. Only the legs change: the back foot is now planted on the "
+        "ground, and the front foot is lifted and extended forward. Eyes stay open. "
+        "Keep the same character, same size, same style, same colors.",
     ),
     8: (
         "fall",
-        "Make the character look like it's falling through the air — limbs splayed "
-        "outward in a startled posture, mouth open in surprise, no ground under "
-        "its feet. Keep the same character, same size, same style, same colors.",
+        "Make the character look like it's falling through the air, no ground under its feet. "
+        "If the creature has wings and can fly (bird, dragon, fairy, bat, etc.), "
+        "show it gliding calmly downward with wings spread wide and a composed expression, "
+        "looking toward the ground below. "
+        "Otherwise, limbs splayed outward in a startled posture and mouth open in surprise. "
+        "Keep the same character, same size, same style, same colors.",
     ),
     9: (
         "stunned",
-        "Make the character look stunned — body on or near the ground, eyes drawn "
-        "as two small X shapes, and two or three small yellow star or asterisk "
-        "shapes floating around its head. Mouth slightly open. Keep the same "
-        "character, same size, same style, same colors.",
+        "Make the character look defeated/stunned in a way that matches its body:\n"
+        "- If it can fly (has wings): landed neatly on the ground with wings folded "
+        "against its body and a neutral settled expression (not dazed).\n"
+        "- If squishy or gooey (blob, slime, jelly): SPLATTED into a flat puddle, "
+        "body flattened and spreading outward with a few droplets splashing to the sides.\n"
+        "- If brittle or crystalline (crystal, glass, shell): SHATTERED into several "
+        "angular shards scattered around the landing spot, with small crack lines.\n"
+        "- If metallic or mechanical (robot, tin): dented and short-circuiting on the "
+        "ground with small black smoke puffs and a few yellow spark shapes around it.\n"
+        "- If fiery or made of flame: the flame flickered down to glowing embers and "
+        "thin smoke wisps, body low and dim.\n"
+        "- If cloud-like or fluffy (cloud, plush, feathered): POOFED into a small puff "
+        "of fluff or feathers scattered around a deflated body.\n"
+        "- If ghostly, gaseous, or ethereal: DISSIPATING into translucent wisps "
+        "drifting upward from a faint body outline.\n"
+        "- If plant-like or leafy: WILTED, body drooped on the ground with a few "
+        "leaves or petals scattered around it.\n"
+        "- Otherwise: dazed — body on or near the ground, eyes as two small X shapes, "
+        "2–3 small yellow star shapes floating around its head, mouth slightly open.\n"
+        "Keep the same character, same colors, same style.",
     ),
 }
 
@@ -358,9 +398,7 @@ def _generate_gemini_sprite_frames(config: TpetConfig, pet: PetProfile) -> tuple
     return frames, sprite_path
 
 
-def _generate_gemini_sprite_frames_10(
-    config: TpetConfig, pet: PetProfile
-) -> tuple[list[Image.Image], Path]:
+def _generate_gemini_sprite_frames_10(config: TpetConfig, pet: PetProfile) -> tuple[list[Image.Image], Path]:
     """Generate and split a 10-frame (2x5) Gemini sprite sheet for macos-desktop mode.
 
     Uses the extended :func:`build_sprite_prompt_10` prompt and a taller
@@ -426,18 +464,14 @@ def generate_macos_desktop_art_openai(
     OpenAI path already writes to those paths during the edit loop, but we
     save again to be consistent with the Gemini path.
     """
-    try:
-        frames, result = _generate_openai_frames(
-            config,
-            pet,
-            on_progress=on_progress,
-            base_image_path=base_image_path,
-            edit_prompts=_EDIT_PROMPTS_10,
-            frame_count=10,
-        )
-    except (RuntimeError, OSError):
-        logger.exception("OpenAI macos-desktop generation failed")
-        return [], None
+    frames, result = _generate_openai_frames(
+        config,
+        pet,
+        on_progress=on_progress,
+        base_image_path=base_image_path,
+        edit_prompts=_EDIT_PROMPTS_10,
+        frame_count=10,
+    )
 
     # Frames are already on disk (the edit loop writes each one). Re-save to
     # be explicit, matching the Gemini path's behavior.
@@ -474,9 +508,7 @@ def generate_macos_desktop_art(
         return [], None
 
     if resolved.provider in (LLMProvider.OPENAI, LLMProvider.OPENROUTER):
-        return generate_macos_desktop_art_openai(
-            config, pet, on_progress=on_progress, base_image_path=base_image_path
-        )
+        return generate_macos_desktop_art_openai(config, pet, on_progress=on_progress, base_image_path=base_image_path)
 
     raise ValueError(
         f"macos-desktop art generation is not supported for provider "
@@ -542,23 +574,19 @@ def generate_halfblock_art(config: TpetConfig, pet: PetProfile) -> list[str]:
     """
     from tpet.art.process import image_to_halfblock, resize_for_halfblock
 
-    try:
-        logger.info("Generating halfblock sprite sheet for %s via Gemini", pet.name)
-        frames, _ = _generate_gemini_sprite_frames(config, pet)
-        return _process_frames(
-            frames,
-            config,
-            pet.name,
-            resize_fn=resize_for_halfblock,
-            target_height=config.halfblock_size,
-            convert_fn=image_to_halfblock,
-            save_fn=save_halfblock_frame,
-            label="Halfblock",
-            chroma_key=True,
-        )
-    except (RuntimeError, OSError):
-        logger.exception("Failed to generate halfblock art for %s", pet.name)
-        return []
+    logger.info("Generating halfblock sprite sheet for %s via Gemini", pet.name)
+    frames, _ = _generate_gemini_sprite_frames(config, pet)
+    return _process_frames(
+        frames,
+        config,
+        pet.name,
+        resize_fn=resize_for_halfblock,
+        target_height=config.halfblock_size,
+        convert_fn=image_to_halfblock,
+        save_fn=save_halfblock_frame,
+        label="Halfblock",
+        chroma_key=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -639,39 +667,51 @@ def _generate_openai_frames(
             if on_progress:
                 on_progress(current, total_steps, label)
 
-        # Step 1: Generate the initial base idle frame
-        _report(1, "idle (generate)")
-        base_prompt = _build_base_frame_prompt(pet, prompt_override=config.art_prompt)
-        save_prompt(config.pet_data_dir, pet.name, base_prompt)
-        raw_base_path = art_dir / f"{safe_name}_frame_0_raw.png"
-        logger.info("Generating base idle frame for %s via OpenAI", pet.name)
-        _, usage = client.generate_sprite(
-            prompt=base_prompt,
-            output_path=raw_base_path,
-            size="1024x1024",
-            quality="medium",
-        )
-        total_usage += usage
-        result.api_calls += 1
-
-        # Step 2: Clean up the base frame via edit to fix background transparency
-        _report(2, "idle (cleanup)")
         frame_0_path = art_dir / f"{safe_name}_frame_0.png"
-        logger.info("Cleaning up base frame background via edit")
-        _, usage = client.edit_sprite(
-            image_path=raw_base_path,
-            prompt=(
-                "Keep this pixel art character exactly as it is — same pose, same colors, "
-                "same details, same size, same position. Change nothing about the character. "
-                "Remove all background completely so it is fully transparent."
-            ),
-            output_path=frame_0_path,
-            quality="medium",
-        )
-        total_usage += usage
-        result.api_calls += 1
+        if frame_0_path.exists():
+            # Resume: frame 0 already on disk from a prior run.
+            _report(1, "idle (cached)")
+            _report(2, "idle (cached)")
+            logger.info("Frame 0 already exists at %s, skipping generate + cleanup", frame_0_path)
+            ai_frames = {0: Image.open(frame_0_path)}
+        else:
+            # Step 1: Generate the initial base idle frame
+            _report(1, "idle (generate)")
+            base_prompt = _build_base_frame_prompt(pet, prompt_override=config.art_prompt)
+            save_prompt(config.pet_data_dir, pet.name, base_prompt)
+            raw_base_path = art_dir / f"{safe_name}_frame_0_raw.png"
+            logger.info("Generating base idle frame for %s via OpenAI", pet.name)
+            _, usage = client.generate_sprite(
+                prompt=base_prompt,
+                output_path=raw_base_path,
+                size="1024x1024",
+                quality="medium",
+            )
+            total_usage += usage
+            result.api_calls += 1
 
-        ai_frames = {0: Image.open(frame_0_path)}
+            # Step 2: Clean up the base frame via edit to fix background transparency
+            _report(2, "idle (cleanup)")
+            logger.info("Cleaning up base frame background via edit")
+            _, usage = client.edit_sprite(
+                image_path=raw_base_path,
+                prompt=(
+                    "Keep this pixel art character EXACTLY as it is — same pose, same colors, "
+                    "same details, same size, same position, same thick black outline, same "
+                    "eyes, same mouth, same face. Change nothing about the character itself. "
+                    "ONLY the empty area around the character (the outer background fill) "
+                    "should become transparent. Do NOT make any part of the character — body, "
+                    "outline, eyes, or features — transparent. Every pixel of the character "
+                    "must remain fully OPAQUE. Only the space surrounding the character "
+                    "becomes transparent."
+                ),
+                output_path=frame_0_path,
+                quality="medium",
+            )
+            total_usage += usage
+            result.api_calls += 1
+
+            ai_frames = {0: Image.open(frame_0_path)}
 
     # frame_0_path is the canonical idle frame used as input for all edits
     edit_source = frame_0_path
@@ -681,14 +721,26 @@ def _generate_openai_frames(
     # 5=sleep. For 10-frame: plus 6=walk-a, 7=walk-b, 8=fall, 9=stunned.
     # Step numbering starts after the base image steps (1 if user-provided, 3 if generated).
     edit_step_start = 1 if base_image_path is not None else 3
+    opacity_guard = (
+        " IMPORTANT: preserve the character's thick black outline and keep every "
+        "pixel of the character body fully OPAQUE. Do NOT make the outline, eyes, "
+        "mouth, or any part of the body transparent. Only the empty space around "
+        "the character stays transparent."
+    )
     for step, frame_idx in enumerate(sorted(edit_prompts.keys()), start=edit_step_start):
         label, edit_prompt = edit_prompts[frame_idx]
-        _report(step, label)
         out_path = art_dir / f"{safe_name}_frame_{frame_idx}.png"
+        if out_path.exists():
+            # Resume: frame already on disk from a prior run.
+            _report(step, f"{label} (cached)")
+            logger.info("Frame %d (%s) already exists, skipping", frame_idx, label)
+            ai_frames[frame_idx] = Image.open(out_path)
+            continue
+        _report(step, label)
         logger.info("Generating frame %d (%s) via OpenAI edit", frame_idx, label)
         _, usage = client.edit_sprite(
             image_path=edit_source,
-            prompt=edit_prompt,
+            prompt=edit_prompt + opacity_guard,
             output_path=out_path,
             quality="medium",
         )
@@ -743,28 +795,24 @@ def generate_halfblock_art_openai(
     """
     from tpet.art.process import image_to_halfblock, resize_for_halfblock
 
-    try:
-        frames, gen_result = _generate_openai_frames(
-            config,
-            pet,
-            on_progress=on_progress,
-            base_image_path=base_image_path,
-        )
-        hblk_frames = _process_frames(
-            frames,
-            config,
-            pet.name,
-            resize_fn=resize_for_halfblock,
-            target_height=config.halfblock_size,
-            convert_fn=image_to_halfblock,
-            save_fn=save_halfblock_frame,
-            label="Halfblock",
-            save_png=True,
-        )
-        return hblk_frames, gen_result
-    except (RuntimeError, OSError):
-        logger.exception("Failed to generate halfblock art (OpenAI) for %s", pet.name)
-        return [], None
+    frames, gen_result = _generate_openai_frames(
+        config,
+        pet,
+        on_progress=on_progress,
+        base_image_path=base_image_path,
+    )
+    hblk_frames = _process_frames(
+        frames,
+        config,
+        pet.name,
+        resize_fn=resize_for_halfblock,
+        target_height=config.halfblock_size,
+        convert_fn=image_to_halfblock,
+        save_fn=save_halfblock_frame,
+        label="Halfblock",
+        save_png=True,
+    )
+    return hblk_frames, gen_result
 
 
 # ---------------------------------------------------------------------------

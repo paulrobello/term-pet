@@ -418,6 +418,10 @@ def cmd_art(
     except ValueError as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1) from None
+    except (RuntimeError, OSError) as exc:
+        console.print(f"[red]Generation failed:[/red] {exc}")
+        console.print("[yellow]Completed frames are saved. Re-run `tpet art` to resume from the failed frame.[/yellow]")
+        raise typer.Exit(1) from None
 
     if frames:
         console.print(f"[green]{mode_label} art generated for {pet.name}! ({len(frames)} frames)[/green]")
