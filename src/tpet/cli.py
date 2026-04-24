@@ -473,7 +473,7 @@ def cmd_run(
     ] = False,
     quiet: Annotated[
         bool,
-        typer.Option("--quiet", "-q", help="Suppress informational messages printed before the live display starts"),
+        typer.Option("--quiet", "-q", help="Suppress startup messages printed before the live display starts"),
     ] = False,
     debug: Annotated[bool, typer.Option("--debug", "-D", help="Enable debug logging")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", count=True, help="Increase verbosity")] = 0,
@@ -644,7 +644,7 @@ def main(
     ] = False,
     quiet: Annotated[
         bool,
-        typer.Option("--quiet", "-q", help="Suppress informational messages printed before the live display starts"),
+        typer.Option("--quiet", "-q", help="Suppress startup messages printed before the live display starts"),
     ] = False,
 ) -> None:
     """Start tpet - your terminal pet companion."""
