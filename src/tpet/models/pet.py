@@ -12,7 +12,7 @@ class PetProfile(BaseModel):
 
     name: str = Field(description="Generated creature name.")
     creature_type: str = Field(description="Species or creature type (e.g. axolotl, phoenix).")
-    rarity: Rarity = Field(description="Rarity tier: Common, Uncommon, Rare, or Legendary.")
+    rarity: Rarity = Field(description="Rarity tier: Common, Uncommon, Rare, Epic, or Legendary.")
     personality: str = Field(description="2-3 sentence personality summary used in commentary prompts.")
     backstory: str = Field(description="3-5 sentence origin story displayed in --details --backstory mode.")
     ascii_art: list[str] = Field(
