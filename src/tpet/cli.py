@@ -475,6 +475,10 @@ def cmd_run(
     show_session: Annotated[
         bool, typer.Option("--show-session", help="Show the session directory and file tpet would follow, then exit")
     ] = False,
+    quiet: Annotated[
+        bool,
+        typer.Option("--quiet", "-q", help="Suppress startup messages printed before the live display starts"),
+    ] = False,
     debug: Annotated[bool, typer.Option("--debug", "-D", help="Enable debug logging")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", count=True, help="Increase verbosity")] = 0,
 ) -> None:
@@ -548,6 +552,7 @@ def cmd_run(
         project_path=project_path,
         watch_dir=watch_dir,
         follow_file=follow,
+        quiet=quiet,
     )
 
 
@@ -640,6 +645,10 @@ def main(
     ] = None,
     show_session: Annotated[
         bool, typer.Option("--show-session", help="Show the session directory and file tpet would follow, then exit")
+    ] = False,
+    quiet: Annotated[
+        bool,
+        typer.Option("--quiet", "-q", help="Suppress startup messages printed before the live display starts"),
     ] = False,
 ) -> None:
     """Start tpet - your terminal pet companion."""
@@ -868,4 +877,5 @@ def main(
         project_path=project_path,
         watch_dir=watch_dir,
         follow_file=follow,
+        quiet=quiet,
     )

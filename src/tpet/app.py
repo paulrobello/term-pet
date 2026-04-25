@@ -90,6 +90,7 @@ def run_app(
     project_path: str,
     watch_dir: str | None = None,
     follow_file: str | None = None,
+    quiet: bool = False,
 ) -> None:
     """Run the main tpet application loop.
 
@@ -100,6 +101,7 @@ def run_app(
         project_path: Project directory being monitored.
         watch_dir: Optional override for session watch directory.
         follow_file: Optional path to a plain text file to follow instead of Claude sessions.
+        quiet: If True, suppress informational messages printed before the live display starts.
     """
     console = Console()
 
@@ -109,7 +111,8 @@ def run_app(
 
     if follow_file:
         file_path = Path(follow_file)
-        console.print(f"[cyan]Following text file: {file_path}[/cyan]")
+        if not quiet:
+            console.print(f"[cyan]Following text file: {file_path}[/cyan]")
         watcher = TextFileWatcher(file_path=file_path, event_queue=event_queue)
     else:
         if watch_dir:
@@ -121,8 +124,9 @@ def run_app(
 
         if not session_dir.exists():
             logger.warning("Session directory not found: %s", session_dir)
-            console.print(f"[yellow]Session directory not found: {session_dir}[/yellow]")
-            console.print("[dim]Will watch for it to appear...[/dim]")
+            if not quiet:
+                console.print(f"[yellow]Session directory not found: {session_dir}[/yellow]")
+                console.print("[dim]Will watch for it to appear...[/dim]")
 
         watcher = SessionWatcher(session_dir=session_dir, event_queue=event_queue)
 

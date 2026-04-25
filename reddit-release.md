@@ -6,7 +6,7 @@ I made a terminal pet that watches my coding sessions and judges me -- now it's 
 
 ## Subreddit
 
-r/commandline, r/Python, r/coolgithubprojects
+r/commandline, r/Python, r/claudeai, r/unixporn
 
 ## Body
 
