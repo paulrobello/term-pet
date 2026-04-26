@@ -32,7 +32,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Claude Code (keep .claude/ itself)
+# Claude Code
+.claude/
 *-mcp.json
 .gemini-clipboard
 .cc2cc-session-id
