@@ -10,10 +10,12 @@ Lifecycle:
     ``{config_dir}/sessions/{tpet_pid}.sock``. Multiple tpet sessions run
     side-by-side, each with their own pet on the desktop.
   * The Swift pet is the socket server; this renderer is the client. We
-    pass ``--socket``, ``--session``, ``--pwd``, ``--art-dir``, and
-    ``--profile`` so the binary knows where to listen, what identity to
-    show in its tray, and which sprite/profile files to read — critical
-    when the user launches tpet with ``--config-dir`` pointing elsewhere.
+    pass ``--socket``, ``--session``, ``--pwd``, ``--art-dir``,
+    ``--profile``, and ``--config-dir`` so the binary knows where to
+    listen, what identity to show in its tray, and which sprite/profile
+    files to read — critical when the user launches tpet with
+    ``--config-dir`` pointing elsewhere. The config dir is also surfaced
+    in the tray so the user can locate it quickly.
   * On tpet exit (normal or Ctrl-C), :meth:`close` sends SIGTERM to the
     spawned pet and unlinks the socket file. Also registered via ``atexit``
     for abnormal exits.
@@ -107,6 +109,7 @@ class MacosDesktopRenderer:
                 "--pwd", pwd,
                 "--art-dir", str(self._config.art_dir),
                 "--profile", str(self._config.profile_path),
+                "--config-dir", str(self._config.config_dir),
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -229,6 +232,21 @@ class MacosDesktopRenderer:
             lines.append(Text(comment, style="italic"))
         body = Text("\n").join(lines)
         live.update(Panel(body, title="tpet", border_style="dim"), refresh=True)
+
+    # ------------------------------------------------------------------
+    # Lifecycle queries
+    # ------------------------------------------------------------------
+
+    def child_exited(self) -> bool:
+        """Return True once the spawned Deskpet has terminated.
+
+        The user can quit Deskpet from its tray menu or via ``killall
+        Deskpet``; the app loop polls this so tpet exits in lock-step
+        instead of talking to a dead socket forever.
+        """
+        if self._child is None:
+            return False
+        return self._child.poll() is not None
 
     # ------------------------------------------------------------------
     # Cleanup

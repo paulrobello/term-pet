@@ -29,23 +29,31 @@ final class PetController {
     private var currentSurfaceID: CGWindowID? = nil
 
     /// User toggles. Flipping these off mid-state freezes the current
-    /// activity cleanly (walk → idle, fall → idle). Persisted in
-    /// UserDefaults so preferences survive restarts.
+    /// activity cleanly (walk → idle, fall → idle). Persisted to
+    /// `<config_dir>/deskpet_settings.json` when the launching tpet passes
+    /// `--config-dir`, so each config dir keeps its own preferences. Falls
+    /// back to UserDefaults when no config dir is known (standalone
+    /// Deskpet launched without tpet) and as a one-time migration source
+    /// for the new JSON file.
     private static let gravityKey = "deskpet.gravityEnabled"
     private static let walkKey = "deskpet.walkingEnabled"
+    private let settingsFileURL: URL?
+    private var isLoadingSettings = false
 
-    var gravityEnabled: Bool = (UserDefaults.standard.object(forKey: "deskpet.gravityEnabled") as? Bool) ?? true {
+    var gravityEnabled: Bool = true {
         didSet {
-            UserDefaults.standard.set(gravityEnabled, forKey: Self.gravityKey)
+            if isLoadingSettings { return }
+            persistSettings()
             if !gravityEnabled && state == .falling {
                 velocity = .zero
                 enter(.idle)
             }
         }
     }
-    var walkingEnabled: Bool = (UserDefaults.standard.object(forKey: "deskpet.walkingEnabled") as? Bool) ?? true {
+    var walkingEnabled: Bool = true {
         didSet {
-            UserDefaults.standard.set(walkingEnabled, forKey: Self.walkKey)
+            if isLoadingSettings { return }
+            persistSettings()
             if !walkingEnabled && state == .walking {
                 enter(.idle)
             }
@@ -71,7 +79,9 @@ final class PetController {
     private let blinkLengthFrames = 6
     private let blinkHalfLength = 3
 
-    init() {
+    init(configDir: URL? = nil) {
+        self.settingsFileURL = configDir?.appendingPathComponent("deskpet_settings.json")
+
         var loaded: [NSImage] = []
         loaded.reserveCapacity(SpriteFrame.allCases.count)
         for frame in SpriteFrame.allCases {
@@ -95,8 +105,55 @@ final class PetController {
         view.onMouseUp = { [weak self] _ in self?.endDrag() }
         view.onDoubleClick = { [weak self] in self?.handleDoubleClick() }
 
+        loadSettings()
         updateSprite()
         window.orderFront(nil)
+    }
+
+    // MARK: - Settings persistence
+
+    private func loadSettings() {
+        isLoadingSettings = true
+        defer { isLoadingSettings = false }
+
+        if let url = settingsFileURL,
+           let data = try? Data(contentsOf: url),
+           let dict = (try? JSONSerialization.jsonObject(with: data)) as? [String: Bool] {
+            if let g = dict["gravityEnabled"] { gravityEnabled = g }
+            if let w = dict["walkingEnabled"] { walkingEnabled = w }
+            return
+        }
+
+        // No per-config JSON yet: read legacy UserDefaults so users who
+        // toggled before this change don't lose their setting on first
+        // launch. The next persistSettings() call will migrate the values
+        // into the JSON file.
+        if let g = UserDefaults.standard.object(forKey: Self.gravityKey) as? Bool {
+            gravityEnabled = g
+        }
+        if let w = UserDefaults.standard.object(forKey: Self.walkKey) as? Bool {
+            walkingEnabled = w
+        }
+    }
+
+    private func persistSettings() {
+        guard let url = settingsFileURL else {
+            // Standalone Deskpet (no --config-dir): keep the legacy
+            // UserDefaults behavior so toggles still survive restarts.
+            UserDefaults.standard.set(gravityEnabled, forKey: Self.gravityKey)
+            UserDefaults.standard.set(walkingEnabled, forKey: Self.walkKey)
+            return
+        }
+        let dict: [String: Bool] = [
+            "gravityEnabled": gravityEnabled,
+            "walkingEnabled": walkingEnabled,
+        ]
+        if let data = try? JSONSerialization.data(
+            withJSONObject: dict,
+            options: [.prettyPrinted, .sortedKeys]
+        ) {
+            try? data.write(to: url, options: .atomic)
+        }
     }
 
     func start() {

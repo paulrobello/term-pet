@@ -6,6 +6,7 @@ enum Rarity: String {
     case common = "COMMON"
     case uncommon = "UNCOMMON"
     case rare = "RARE"
+    case epic = "EPIC"
     case legendary = "LEGENDARY"
 
     var stars: String {
@@ -13,19 +14,21 @@ enum Rarity: String {
         case .common:    return "\u{2605}"
         case .uncommon:  return "\u{2605}\u{2605}"
         case .rare:      return "\u{2605}\u{2605}\u{2605}"
-        case .legendary: return "\u{2605}\u{2605}\u{2605}\u{2605}"
+        case .epic:      return "\u{2605}\u{2605}\u{2605}\u{2605}"
+        case .legendary: return "\u{2605}\u{2605}\u{2605}\u{2605}\u{2605}"
         }
     }
 
     /// Maps to the closest AppKit system color. The python side uses Rich
-    /// color names (dim / green / yellow / bright_magenta); the macOS tray
-    /// can't render those verbatim, so we pick visually-similar system colors
-    /// that also adapt to dark mode.
+    /// color names (dim / green / yellow / medium_purple1 / bright_magenta);
+    /// the macOS tray can't render those verbatim, so we pick visually-similar
+    /// system colors that also adapt to dark mode.
     var color: NSColor {
         switch self {
         case .common:    return .secondaryLabelColor
         case .uncommon:  return .systemGreen
         case .rare:      return .systemYellow
+        case .epic:      return .systemPurple
         case .legendary: return .systemPink
         }
     }

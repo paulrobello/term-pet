@@ -9,6 +9,7 @@ struct PetContext {
     var pwd: String
     var artDir: String?
     var profilePath: String?
+    var configDir: String?
 }
 
 private func parseArgs(_ argv: [String]) -> PetContext {
@@ -21,6 +22,7 @@ private func parseArgs(_ argv: [String]) -> PetContext {
     var pwd = FileManager.default.currentDirectoryPath
     var artDir: String? = nil
     var profilePath: String? = nil
+    var configDir: String? = nil
 
     var i = 1
     while i < argv.count {
@@ -37,6 +39,8 @@ private func parseArgs(_ argv: [String]) -> PetContext {
             if hasValue { artDir = argv[i + 1]; i += 2 } else { i += 1 }
         case "--profile":
             if hasValue { profilePath = argv[i + 1]; i += 2 } else { i += 1 }
+        case "--config-dir":
+            if hasValue { configDir = argv[i + 1]; i += 2 } else { i += 1 }
         default:
             i += 1
         }
@@ -48,7 +52,8 @@ private func parseArgs(_ argv: [String]) -> PetContext {
         session: label.isEmpty ? "deskpet" : label,
         pwd: pwd,
         artDir: artDir,
-        profilePath: profilePath
+        profilePath: profilePath,
+        configDir: configDir
     )
 }
 

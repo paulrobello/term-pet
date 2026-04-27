@@ -169,7 +169,14 @@ def run_app(
             auto_refresh=False,
             transient=False,
         ) as live:
+            child_exited = getattr(renderer, "child_exited", None)
+
             while True:
+                # --- Bail out if a spawned helper (e.g. Deskpet) is gone ---
+                if callable(child_exited) and child_exited():
+                    logger.info("renderer's child process exited; shutting down tpet")
+                    break
+
                 # --- Harvest completed comment future ---
                 if _pending_comment is not None and _pending_comment.done():
                     try:

@@ -13,7 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        controller = PetController()
+        let configURL = context.configDir.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        controller = PetController(configDir: configURL)
         controller?.start()
         installStatusItem()
     }
@@ -30,6 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(headerItem())
         menu.addItem(infoItem(key: "session", value: context.session))
         menu.addItem(infoItem(key: "cwd", value: collapseHome(context.pwd)))
+        if let configDir = context.configDir {
+            menu.addItem(infoItem(key: "config", value: collapseHome(configDir)))
+        }
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(spriteItem())
@@ -73,6 +77,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         walk.state = (controller?.walkingEnabled ?? true) ? .on : .off
         menu.addItem(walk)
         walkItem = walk
+
+        if context.configDir != nil {
+            let openConfig = NSMenuItem(
+                title: "Open Config Folder",
+                action: #selector(openConfigFolder),
+                keyEquivalent: ""
+            )
+            openConfig.target = self
+            menu.addItem(openConfig)
+        }
 
         menu.addItem(NSMenuItem.separator())
 
@@ -323,6 +337,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let controller = controller else { return }
         controller.walkingEnabled.toggle()
         sender.state = controller.walkingEnabled ? .on : .off
+    }
+
+    @objc private func openConfigFolder() {
+        guard let configDir = context.configDir else { return }
+        let url = URL(fileURLWithPath: configDir, isDirectory: true)
+        NSWorkspace.shared.open(url)
     }
 
     @objc private func quit() {
