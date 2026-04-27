@@ -1,4 +1,4 @@
-.PHONY: build package test lint fmt typecheck checkall clean pre-commit pre-commit-update test-ollama ollama-report test-ollama-art test-ollama-art-resume ollama-art-report
+.PHONY: build package test lint fmt typecheck checkall clean pre-commit pre-commit-update test-ollama ollama-report test-ollama-art test-ollama-art-resume ollama-art-report desktop desktop-clean dev
 
 build:
 	uv build
@@ -44,3 +44,16 @@ ollama-art-report:
 clean:
 	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# macOS desktop pet (Swift/AppKit)
+# ---------------------------------------------------------------------------
+
+desktop:			## Build the macOS desktop pet (release)
+	cd macos_desktop && swift build -c release
+
+desktop-clean:			## Clean the Swift build artifacts
+	cd macos_desktop && swift package clean
+
+dev:				## Run tpet in macos-desktop mode
+	uv run tpet --art-mode macos-desktop

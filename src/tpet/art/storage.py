@@ -6,7 +6,7 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
-from tpet.animation.engine import FRAME_COUNT_CURRENT, FRAME_COUNT_LEGACY
+from tpet.animation.engine import FRAME_COUNT_CURRENT, FRAME_COUNT_LEGACY, FRAME_COUNT_MACOS_DESKTOP
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -253,6 +253,26 @@ def has_png_frames(config_dir: Path, pet_name: str) -> bool:
 def delete_png_frames(config_dir: Path, pet_name: str) -> None:
     """Delete all raw PNG frame files for a pet."""
     _delete_frames(config_dir, pet_name, ".png", "PNG")
+
+
+def missing_macos_desktop_frames(config_dir: Path, pet_name: str) -> list[int]:
+    """Return the list of frame indices (0..9) that are missing for the macos-desktop art mode.
+
+    Unlike ``_detect_frame_count`` this does not short-circuit on the first gap —
+    it reports every missing frame so callers can surface a full list.
+    """
+    safe_name = sanitize_name(pet_name)
+    art_dir = get_art_dir(config_dir)
+    return [
+        i
+        for i in range(FRAME_COUNT_MACOS_DESKTOP)
+        if not (art_dir / f"{safe_name}_frame_{i}.png").exists()
+    ]
+
+
+def has_macos_desktop_frames(config_dir: Path, pet_name: str) -> bool:
+    """True when all 10 PNG frames required by the macos-desktop art mode are present."""
+    return not missing_macos_desktop_frames(config_dir, pet_name)
 
 
 # ---------------------------------------------------------------------------

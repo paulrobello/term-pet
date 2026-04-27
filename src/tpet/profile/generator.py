@@ -38,6 +38,26 @@ _ART_RULES = (
     "- Frame 5: sleeping (eyes closed, zzz)\n\n"
 )
 
+_LOCOMOTION_INSTRUCTIONS = (
+    "LOCOMOTION FIELDS (used to drive the desktop pet's walk/fall/landing animation): "
+    "describe how THIS specific creature moves. Be concrete and species-appropriate — "
+    "a 4-legged animal trots, a snake slithers, a centipede ripples its many legs, "
+    "a bird flaps and glides, a balloon drifts. Keep each description to 1-3 sentences "
+    "and do NOT include cell/frame numbering — the consumer wraps these into a sprite-sheet prompt.\n"
+    "- body_plan: anatomy in one sentence (limb count, wings, tail, body shape, etc.).\n"
+    "- walk_description: a two-stride walk cycle describing stride A and stride B for THIS creature's "
+    "locomotion (4-leg diagonal trot, 6-leg tripod gait, slither S-curve A vs S-curve B, hover bob, etc.). "
+    "Always FACING RIGHT. Do not flip or mirror between strides.\n"
+    "- fall_description: how it behaves mid-air. If it has wings or is naturally floaty (cloud, balloon, "
+    "feather, jellyfish), it GLIDES or DRIFTS calmly. Otherwise it PLUMMETS with limbs splayed and a "
+    "startled expression.\n"
+    "- landing_description: how it hits the ground. Describe only one frame, the moment of impact."
+    "Soft for gliders/floaters (touches down with wings folded / drifts to rest, neutral expression). "
+    "Hard for everything else, choosing the reaction that matches the body: splatted into a puddle for squishy/gooey"
+    " shattered shards for brittle/crystalline, dented + sparks for metallic/mechanical, "
+    "dazed with X-eyes and stars otherwise.\n"
+)
+
 _SYSTEM_PROMPT = (
     "You are a creative terminal pet designer. Generate a unique, charming creature "
     "that would live in a developer's terminal. The creature should have a distinct personality "
@@ -50,6 +70,8 @@ _SYSTEM_PROMPT = (
     "Each stat is an integer from 1-100. Choose values that make sense for the character — "
     "a chaotic creature should have high CHAOS, a patient one high PATIENCE, etc.\n"
     "The 5 stats are: HUMOR, PATIENCE, CHAOS, WISDOM, SNARK\n\n"
+    + _LOCOMOTION_INSTRUCTIONS
+    + "\n"
     "IMPORTANT: Output ONLY a single JSON object with no markdown fencing, no explanation, "
     "and no extra text. The JSON must have these exact keys:\n"
     '- "name": string (creative creature name)\n'
@@ -59,6 +81,10 @@ _SYSTEM_PROMPT = (
     '- "ascii_art": array of exactly 6 strings (multiline, all same dimensions)\n'
     '- "accent_color": string (Rich color name like cyan, red, bright_magenta)\n'
     '- "stats": object mapping stat name to integer value, e.g. {"HUMOR": 75, "PATIENCE": 30, ...}\n'
+    '- "body_plan": string (anatomy in one sentence)\n'
+    '- "walk_description": string (two-stride walk cycle for the macos-desktop sprite)\n'
+    '- "fall_description": string (mid-air behavior — glide vs plummet)\n'
+    '- "landing_description": string (touchdown reaction — soft vs hard impact)\n'
 )
 
 _JSON_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?\s*```", re.DOTALL)
@@ -531,6 +557,10 @@ async def _generate_pet_async(
         stats=stats,
         accent_color=str(data["accent_color"]),
         project_path=project_path,
+        body_plan=str(data.get("body_plan", "")).strip(),
+        walk_description=str(data.get("walk_description", "")).strip(),
+        fall_description=str(data.get("fall_description", "")).strip(),
+        landing_description=str(data.get("landing_description", "")).strip(),
     )
 
 
@@ -622,3 +652,71 @@ def generate_pet(
     """
     result = _run_with_retries(_generate_pet_async, config, rarity, project_path, criteria, context="Pet generation")
     return result  # type: ignore[return-value]
+
+
+_LOCOMOTION_BACKFILL_SYSTEM_PROMPT = (
+    "You are a creature designer filling in missing animation fields for an existing pet. "
+    "You will be given the pet's name, creature type, personality, and backstory. "
+    "Produce four short descriptors used by an image-generation pipeline.\n\n"
+    + _LOCOMOTION_INSTRUCTIONS
+    + "\n"
+    "IMPORTANT: Output ONLY a single JSON object with no markdown fencing, no explanation, "
+    "and no extra text. The JSON must have these exact keys:\n"
+    '- "body_plan": string\n'
+    '- "walk_description": string\n'
+    '- "fall_description": string\n'
+    '- "landing_description": string\n'
+)
+
+
+async def _backfill_locomotion_async(config: TpetConfig, pet: PetProfile) -> dict[str, str]:
+    """Ask the configured profile LLM for the four locomotion descriptors."""
+    user_prompt = (
+        f"Fill in the locomotion fields for this existing pet:\n"
+        f"- Name: {pet.name}\n"
+        f"- Creature type: {pet.creature_type}\n"
+        f"- Personality: {pet.personality}\n"
+        f"- Backstory: {pet.backstory}\n"
+        f"- Rarity: {pet.rarity.value} ({pet.rarity.stars})\n"
+    )
+    data = await _call_profile_llm(
+        _LOCOMOTION_BACKFILL_SYSTEM_PROMPT, user_prompt, config, context="locomotion backfill"
+    )
+    return {
+        "body_plan": str(data.get("body_plan", "")).strip(),
+        "walk_description": str(data.get("walk_description", "")).strip(),
+        "fall_description": str(data.get("fall_description", "")).strip(),
+        "landing_description": str(data.get("landing_description", "")).strip(),
+    }
+
+
+def ensure_locomotion_descriptors(config: TpetConfig, pet: PetProfile) -> tuple[PetProfile, bool]:
+    """Return ``(pet, updated)`` with locomotion fields filled in.
+
+    If any of the four fields is empty (legacy profile), call the configured
+    profile LLM once to fill them all and return a copy of ``pet`` with the
+    new values. ``updated`` is True when the caller should persist the result.
+
+    Args:
+        config: Application configuration.
+        pet: Existing pet profile.
+
+    Returns:
+        Tuple of (pet, updated). ``pet`` is the same object if no change.
+    """
+    if all([pet.body_plan, pet.walk_description, pet.fall_description, pet.landing_description]):
+        return pet, False
+
+    descriptors = _run_with_retries(_backfill_locomotion_async, config, pet, context="Locomotion backfill")
+    if not isinstance(descriptors, dict):
+        return pet, False
+
+    updated = pet.model_copy(
+        update={
+            "body_plan": descriptors.get("body_plan", "") or pet.body_plan,
+            "walk_description": descriptors.get("walk_description", "") or pet.walk_description,
+            "fall_description": descriptors.get("fall_description", "") or pet.fall_description,
+            "landing_description": descriptors.get("landing_description", "") or pet.landing_description,
+        }
+    )
+    return updated, True

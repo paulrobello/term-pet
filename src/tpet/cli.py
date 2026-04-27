@@ -60,13 +60,23 @@ def _build_config(config_dir: Path | None) -> TpetConfig:
     return config
 
 
-def _setup_logging(config: TpetConfig, debug: bool, verbose: int) -> None:
+def _setup_logging(
+    config: TpetConfig,
+    debug: bool,
+    verbose: int,
+    *,
+    console_output: bool = False,
+) -> None:
     """Configure logging based on CLI flags.
 
     Args:
         config: Application config.
         debug: Whether debug mode is enabled.
         verbose: Verbosity level count.
+        console_output: If True, also stream logs to stderr. Only safe for
+            one-shot CLI commands like ``tpet art`` / ``tpet new``; do NOT
+            enable for the live ``tpet run`` TUI, which would corrupt the
+            display.
     """
     level = logging.DEBUG if debug else getattr(logging, config.log_level, logging.WARNING)
     if verbose > 0:
@@ -74,10 +84,15 @@ def _setup_logging(config: TpetConfig, debug: bool, verbose: int) -> None:
 
     config.config_dir.mkdir(parents=True, exist_ok=True)
     config.pet_data_dir.mkdir(parents=True, exist_ok=True)
+    handlers: list[logging.Handler] = [
+        logging.FileHandler(config.log_file_path, encoding="utf-8"),
+    ]
+    if console_output:
+        handlers.append(logging.StreamHandler())
     logging.basicConfig(
         level=level,
         format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-        handlers=[logging.FileHandler(config.log_file_path, encoding="utf-8")],
+        handlers=handlers,
     )
 
 
@@ -371,6 +386,20 @@ def cmd_art(
             help="Path to a custom image to use as the idle frame instead of generating one (forces OpenAI edits)",
         ),
     ] = None,
+    recrop: Annotated[
+        bool,
+        typer.Option(
+            "--recrop",
+            help="Re-crop existing PNG frames to a shared bounding box; skip generation",
+        ),
+    ] = False,
+    rechroma: Annotated[
+        bool,
+        typer.Option(
+            "--rechroma",
+            help="Re-split and chroma-key from the saved sprite PNG (no API call)",
+        ),
+    ] = False,
     debug: Annotated[bool, typer.Option("--debug", "-D", help="Enable debug logging")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", count=True, help="Increase verbosity")] = 0,
 ) -> None:
@@ -391,7 +420,7 @@ def cmd_art(
         image_art_provider=image_art_provider,
         image_art_model=image_art_model,
     )
-    _setup_logging(config, debug, verbose)
+    _setup_logging(config, debug, verbose, console_output=debug)
 
     # Validate base image if provided
     if base_image is not None and not base_image.exists():
@@ -403,7 +432,75 @@ def cmd_art(
         console.print("[yellow]No pet found. Run `tpet new` to create one.[/yellow]")
         raise typer.Exit(code=1)
 
+    if recrop:
+        from PIL import Image
+
+        from tpet.art.process import crop_frames_to_common_bbox
+        from tpet.art.storage import get_art_dir, sanitize_name
+
+        art_dir = get_art_dir(config.pet_data_dir)
+        safe = sanitize_name(pet.name)
+        paths = sorted(p for p in art_dir.glob(f"{safe}_frame_*.png") if "_raw" not in p.name)
+        if not paths:
+            console.print(f"[yellow]No frame PNGs found for {pet.name} in {art_dir}.[/yellow]")
+            raise typer.Exit(code=1)
+        images = [Image.open(p).convert("RGBA") for p in paths]
+        cropped = crop_frames_to_common_bbox(images)
+        for p, img in zip(paths, cropped, strict=True):
+            img.save(p, format="PNG")
+        console.print(f"[green]Re-cropped {len(cropped)} frames for {pet.name} to {cropped[0].size}.[/green]")
+        return
+
+    if rechroma:
+        from PIL import Image
+
+        from tpet.art.process import remove_chroma_key, split_sprite_sheet
+        from tpet.art.storage import get_art_dir, sanitize_name, save_png_frame
+
+        art_dir = get_art_dir(config.pet_data_dir)
+        safe = sanitize_name(pet.name)
+        sprite_path = art_dir / f"{safe}_sprite.png"
+        if not sprite_path.exists():
+            console.print(f"[yellow]No sprite found at {sprite_path}.[/yellow]")
+            raise typer.Exit(code=1)
+
+        layout = "2x5" if config.art_mode == ArtMode.MACOS_DESKTOP else None
+        sprite = Image.open(sprite_path)
+        frames = split_sprite_sheet(sprite, layout=layout, inset_px=6)
+        chroma_target = (255, 0, 255)
+        chroma_tolerance = max(config.chroma_tolerance, 100)
+        frames = [
+            remove_chroma_key(f, tolerance=chroma_tolerance, target_color=chroma_target)
+            for f in frames
+        ]
+        for i, frame in enumerate(frames):
+            save_png_frame(config.pet_data_dir, pet.name, i, frame)
+        console.print(f"[green]Re-chroma'd {len(frames)} frames for {pet.name} from {sprite_path.name}.[/green]")
+        return
+
     mode_label = config.art_mode.replace("-", " ").title()
+
+    if config.art_mode == ArtMode.MACOS_DESKTOP:
+        from tpet.profile.generator import ensure_locomotion_descriptors
+        from tpet.profile.storage import save_profile
+
+        needs_backfill = not all(
+            [pet.body_plan, pet.walk_description, pet.fall_description, pet.landing_description]
+        )
+        if needs_backfill:
+            console.print(
+                f"[cyan]Filling in locomotion descriptors for {pet.name} "
+                f"(via {config.resolved_profile_provider.provider.value}, this may take a few seconds)...[/cyan]"
+            )
+        try:
+            pet, updated = ensure_locomotion_descriptors(config, pet)
+        except RuntimeError as exc:
+            console.print(f"[red]Failed to generate locomotion descriptors:[/red] {exc}")
+            raise typer.Exit(1) from None
+        if updated:
+            save_profile(pet, profile_path)
+            console.print(f"[dim]Saved updated profile to {profile_path}.[/dim]")
+
     if base_image:
         console.print(f"[cyan]Generating {mode_label} art for {pet.name} from {base_image.name}...[/cyan]")
     else:
@@ -417,6 +514,10 @@ def cmd_art(
         frames, gen_result = generate_art(config, pet, on_progress=_on_progress, base_image_path=base_image)
     except ValueError as exc:
         console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from None
+    except (RuntimeError, OSError) as exc:
+        console.print(f"[red]Generation failed:[/red] {exc}")
+        console.print("[yellow]Completed frames are saved. Re-run `tpet art` to resume from the failed frame.[/yellow]")
         raise typer.Exit(1) from None
 
     if frames:

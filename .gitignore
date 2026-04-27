@@ -32,7 +32,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Claude Code (keep .claude/ itself)
+# Claude Code
+.claude/
 *-mcp.json
 .gemini-clipboard
 .cc2cc-session-id
@@ -49,3 +50,8 @@ CLAUDE.local.md
 *~
 *.bak
 scripts/ollama_art_report.html
+
+# macOS desktop pet (Swift build artifacts)
+macos_desktop/.build/
+macos_desktop/.swiftpm/
+macos_desktop/Package.resolved
