@@ -55,3 +55,4 @@ scripts/ollama_art_report.html
 macos_desktop/.build/
 macos_desktop/.swiftpm/
 macos_desktop/Package.resolved
+.pi/extensions/discord-relay/state.json
