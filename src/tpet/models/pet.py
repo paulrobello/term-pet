@@ -34,3 +34,31 @@ class PetProfile(BaseModel):
     comment_history: list[str] = Field(
         default_factory=list, description="Rolling history of recent comments (max 20 entries)."
     )
+    body_plan: str = Field(
+        default="",
+        description=(
+            "Anatomical description of the creature for image generation (limbs, wings, body shape, "
+            "locomotion mode). Generated lazily by the LLM if missing. Empty for legacy profiles."
+        ),
+    )
+    walk_description: str = Field(
+        default="",
+        description=(
+            "Two-stride walk-cycle description used in the macos-desktop sprite prompt. "
+            "Should reflect the creature's locomotion (4-leg trot, 6-leg scuttle, slither, hover, etc.)."
+        ),
+    )
+    fall_description: str = Field(
+        default="",
+        description=(
+            "Description of how the creature falls (glides if winged, drifts if floaty, plummets otherwise) "
+            "used in the macos-desktop sprite prompt."
+        ),
+    )
+    landing_description: str = Field(
+        default="",
+        description=(
+            "Description of how the creature lands (soft-touch for gliders/floaters, "
+            "hard impact reaction otherwise — splat, shatter, dent, dazed) used in the macos-desktop sprite prompt."
+        ),
+    )

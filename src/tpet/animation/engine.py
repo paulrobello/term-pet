@@ -16,6 +16,7 @@ class AnimationState(StrEnum):
 # Supported frame counts
 FRAME_COUNT_LEGACY = 4  # 2x2 sprite sheet (idle, idle-shift, react, sleep)
 FRAME_COUNT_CURRENT = 6  # 2x3 sprite sheet (adds blink variants)
+FRAME_COUNT_MACOS_DESKTOP = 10  # 2x5 sprite sheet — adds walk/fall/stun for desktop use
 
 # 6-frame layout (2x3 sprite sheet):
 #   0 = idle pose (eyes open)       1 = idle-shift (eyes open)

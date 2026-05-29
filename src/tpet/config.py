@@ -96,7 +96,7 @@ _PROVIDER_DEFAULTS: dict[tuple[LLMProvider, PipelineType], dict[str, str]] = {
         "api_key_env": "GEMINI_API_KEY",
     },
     (LLMProvider.GEMINI, "image"): {
-        "model": "gemini-2.5-flash",
+        "model": "gemini-3.1-flash-image-preview",
         "base_url": "",
         "api_key_env": "GEMINI_API_KEY",
     },
@@ -188,6 +188,7 @@ class ArtMode(StrEnum):
 
     ASCII = "ascii"
     SIXEL_ART = "sixel-art"
+    MACOS_DESKTOP = "macos-desktop"
 
 
 class BubblePlacement(StrEnum):
