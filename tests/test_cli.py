@@ -11,7 +11,7 @@ class TestCli:
     def test_version(self) -> None:
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.stdout
+        assert "0.2.0" in result.stdout
 
     def test_help(self) -> None:
         result = runner.invoke(app, ["--help"])

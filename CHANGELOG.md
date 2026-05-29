@@ -5,18 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-05-29
 
 ### Added
 
+- **macOS desktop pet renderer** (`--art-mode macos-desktop`) — spawns a native Swift app (Deskpet)
+  that renders the pet on the macOS desktop with gravity, window-top collision, walking, falling,
+  and a system tray menu showing rarity/stats/bio/backstory/config path. Socket-based IPC
+  between `tpet` and the Deskpet binary for real-time state and comment updates.
+- `tpet art --recrop` — re-crop existing PNG frames to a shared union bounding box without
+  regenerating art (useful for pets created before the union-crop feature).
+- `tpet art --rechroma` — re-split and chroma-key from a saved sprite sheet without an API call.
+- `tpet art --base-image` — supply a custom idle frame image for OpenAI/OpenRouter per-frame
+  editing pipeline.
+- **Per-creature locomotion descriptors** (`body_plan`, `walk_description`, `fall_description`,
+  `landing_description` fields on `PetProfile`) — the profile LLM generates these to drive
+  accurate 10-frame sprite poses for any creature type (snake, blob, bird, etc.). Backfilled
+  lazily via `ensure_locomotion_descriptors()` for existing pets.
+- 10-frame sprite sheet layout (2x5) for macOS desktop mode with walk-A, walk-B, fall,
+  and stunned poses.
+- `DesktopPetUnavailableError` exception in `renderer/macos_desktop.py`.
+- `has_macos_desktop_frames()` / `missing_macos_desktop_frames()` in `art/storage.py`.
+- `FRAME_COUNT_MACOS_DESKTOP = 10` constant in `animation/engine.py`.
 - **EPIC rarity tier** between `RARE` and `LEGENDARY` — stats 70-95, 4 stars, color `medium_purple1`.
   `LEGENDARY` bumped from 4 to 5 stars to keep the tier progression monotonic. Default
   `rarity_weights` rebalanced from 60/25/10/5 to 60/25/10/3/2 (totals still 100).
 - `--quiet` / `-q` CLI flag on `tpet` and `tpet run` — suppresses startup messages
   (`Following text file:`, `Session directory not found`) printed before the Rich `Live`
   display takes over; useful for narrow tmux side-panes. `logger.warning` output is unchanged.
-- **Session token/cost tracking** — `SessionUsage` dataclass in `commentary/generator.py` accumulates
-  input tokens, output tokens, total cost, and API call count across all LLM calls; summary displayed on exit
+- Session token/cost tracking — `SessionUsage` dataclass accumulates input/output tokens, total cost, and API call count; summary displayed on exit
 - **Graphical art modes** (`--art-mode pixel-art`, `--art-mode sixel-art`) — generate and display AI-drawn
   pixel art for pets using OpenAI or Gemini image models, rendered as Unicode half-blocks or sixel sequences
 - `--art-mode` / `-a` CLI flag — selects display mode: `ascii` (default), `pixel-art`, or `sixel-art`
@@ -43,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **All dependencies upgraded to latest** — notable bumps: `claude-agent-sdk` 0.1→0.2, `google-genai` 1→2, `cryptography` 46→48, `openai` 2.32→2.38, `typer` 0.24→0.26
 - **Blink frames created programmatically via compositing** — `create_blink_frame()` in `art/process.py`
   transplants closed-eye pixels from the sleep frame onto idle frames using pixel-level diffing within
   the face region; eliminates AI variation and saves 2 API calls per OpenAI generation
@@ -58,6 +76,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default `max_comment_length` changed from 100 to 150 characters
 - `run_app` art rendering adapted to support three rendering pipelines (ASCII, pixel-art, sixel-art)
 - `config.py` art fields added to `TpetConfig` Pydantic model
+
+### Fixed
+
+- CLI correctly reports success for `macos-desktop` art generation (Gemini path intentionally returns
+  empty text frames but PNGs are saved to disk)
+- Prevented watchdog race condition in `TextFileWatcher` tests causing duplicate events on Linux CI
 
 ### Fixed (Audit Remediation)
 
@@ -122,5 +146,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI flags: `--model`, `--comment-interval`, `--idle-chatter-interval`, `--max-comments`,
   `--sleep-threshold`, `--log-level`, `--watch-dir`, `--debug`, `--verbose`, `--dry-run`, `--dump-config`
 
-[Unreleased]: https://github.com/paulrobello/tpet/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/paulrobello/tpet/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/paulrobello/tpet/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/paulrobello/tpet/releases/tag/v0.1.0
