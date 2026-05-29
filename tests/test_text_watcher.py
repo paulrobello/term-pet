@@ -29,9 +29,10 @@ class TestTextFileWatcher:
         with text_file.open("a", encoding="utf-8") as f:
             f.write("hello world\n")
 
+        # Stop observer first to prevent race with manual processing
+        watcher.stop()
         # Manually trigger processing (don't rely on watchdog timing)
         watcher._process_new_lines()
-        watcher.stop()
 
         assert not queue.empty()
         event = queue.get()
@@ -48,9 +49,10 @@ class TestTextFileWatcher:
         watcher = TextFileWatcher(file_path=text_file, event_queue=queue)
         watcher.start()
 
+        # Stop observer first to prevent race with manual processing
+        watcher.stop()
         # Process without appending — should find nothing new
         watcher._process_new_lines()
-        watcher.stop()
 
         assert queue.empty()
 
@@ -66,8 +68,8 @@ class TestTextFileWatcher:
         with text_file.open("a", encoding="utf-8") as f:
             f.write("\n\n  \n")
 
-        watcher._process_new_lines()
         watcher.stop()
+        watcher._process_new_lines()
 
         assert queue.empty()
 
@@ -84,8 +86,8 @@ class TestTextFileWatcher:
         with text_file.open("a", encoding="utf-8") as f:
             f.write(long_line + "\n")
 
-        watcher._process_new_lines()
         watcher.stop()
+        watcher._process_new_lines()
 
         event = queue.get()
         assert len(event.summary) <= 150
@@ -99,9 +101,10 @@ class TestTextFileWatcher:
         watcher = TextFileWatcher(file_path=text_file, event_queue=queue)
         watcher.start()
 
+        # Stop observer first to prevent race with manual processing
+        watcher.stop()
         # Processing a missing file should not raise
         watcher._process_new_lines()
-        watcher.stop()
 
         assert queue.empty()
 
@@ -117,8 +120,8 @@ class TestTextFileWatcher:
         with text_file.open("a", encoding="utf-8") as f:
             f.write("line one\nline two\nline three\n")
 
-        watcher._process_new_lines()
         watcher.stop()
+        watcher._process_new_lines()
 
         events = []
         while not queue.empty():
