@@ -27,6 +27,7 @@ Wire protocol (newline-delimited JSON per tick):
 from __future__ import annotations
 
 import atexit
+import contextlib
 import json
 import logging
 import os
@@ -53,7 +54,7 @@ _CONNECT_DELAY = 0.2
 _TERMINATE_TIMEOUT = 2.0
 
 
-class DesktopPetUnavailable(RuntimeError):
+class DesktopPetUnavailableError(RuntimeError):
     """Raised when the Swift pet binary can't be located or started."""
 
 
@@ -91,7 +92,7 @@ class MacosDesktopRenderer:
 
         bin_path = self._resolve_binary()
         if bin_path is None:
-            raise DesktopPetUnavailable(
+            raise DesktopPetUnavailableError(
                 "macos-desktop mode needs the Deskpet binary. "
                 "Build it with `make desktop` at the repo root, set "
                 "DESKPET_BIN=/path/to/Deskpet, or install it to PATH as `deskpet`."
@@ -104,12 +105,18 @@ class MacosDesktopRenderer:
         self._child = subprocess.Popen(
             [
                 bin_path,
-                "--socket", str(self._sock_path),
-                "--session", session,
-                "--pwd", pwd,
-                "--art-dir", str(self._config.art_dir),
-                "--profile", str(self._config.profile_path),
-                "--config-dir", str(self._config.config_dir),
+                "--socket",
+                str(self._sock_path),
+                "--session",
+                session,
+                "--pwd",
+                pwd,
+                "--art-dir",
+                str(self._config.art_dir),
+                "--profile",
+                str(self._config.profile_path),
+                "--config-dir",
+                str(self._config.config_dir),
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -118,9 +125,8 @@ class MacosDesktopRenderer:
 
         if not self._try_connect(retries=_CONNECT_RETRIES):
             self._kill_child()
-            raise DesktopPetUnavailable(
-                f"Deskpet spawned but didn't open {self._sock_path} within "
-                f"{_CONNECT_RETRIES * _CONNECT_DELAY:.1f}s."
+            raise DesktopPetUnavailableError(
+                f"Deskpet spawned but didn't open {self._sock_path} within {_CONNECT_RETRIES * _CONNECT_DELAY:.1f}s."
             )
         logger.info("connected to desktop pet at %s", self._sock_path)
 
@@ -264,10 +270,8 @@ class MacosDesktopRenderer:
             finally:
                 self._sock = None
         self._kill_child()
-        try:
+        with contextlib.suppress(FileNotFoundError, AttributeError):
             self._sock_path.unlink()
-        except (FileNotFoundError, AttributeError):
-            pass
 
     def _kill_child(self) -> None:
         if self._child is None:

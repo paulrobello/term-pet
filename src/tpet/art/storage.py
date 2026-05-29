@@ -263,11 +263,7 @@ def missing_macos_desktop_frames(config_dir: Path, pet_name: str) -> list[int]:
     """
     safe_name = sanitize_name(pet_name)
     art_dir = get_art_dir(config_dir)
-    return [
-        i
-        for i in range(FRAME_COUNT_MACOS_DESKTOP)
-        if not (art_dir / f"{safe_name}_frame_{i}.png").exists()
-    ]
+    return [i for i in range(FRAME_COUNT_MACOS_DESKTOP) if not (art_dir / f"{safe_name}_frame_{i}.png").exists()]
 
 
 def has_macos_desktop_frames(config_dir: Path, pet_name: str) -> bool:

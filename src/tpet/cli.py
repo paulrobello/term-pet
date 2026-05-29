@@ -469,10 +469,7 @@ def cmd_art(
         frames = split_sprite_sheet(sprite, layout=layout, inset_px=6)
         chroma_target = (255, 0, 255)
         chroma_tolerance = max(config.chroma_tolerance, 100)
-        frames = [
-            remove_chroma_key(f, tolerance=chroma_tolerance, target_color=chroma_target)
-            for f in frames
-        ]
+        frames = [remove_chroma_key(f, tolerance=chroma_tolerance, target_color=chroma_target) for f in frames]
         for i, frame in enumerate(frames):
             save_png_frame(config.pet_data_dir, pet.name, i, frame)
         console.print(f"[green]Re-chroma'd {len(frames)} frames for {pet.name} from {sprite_path.name}.[/green]")
@@ -484,9 +481,7 @@ def cmd_art(
         from tpet.profile.generator import ensure_locomotion_descriptors
         from tpet.profile.storage import save_profile
 
-        needs_backfill = not all(
-            [pet.body_plan, pet.walk_description, pet.fall_description, pet.landing_description]
-        )
+        needs_backfill = not all([pet.body_plan, pet.walk_description, pet.fall_description, pet.landing_description])
         if needs_backfill:
             console.print(
                 f"[cyan]Filling in locomotion descriptors for {pet.name} "
@@ -532,6 +527,14 @@ def cmd_art(
                 f"Est. cost: ${cost:.3f}[/dim]"
             )
         _preview_frames(config, pet.name, len(frames))
+    elif config.art_mode == ArtMode.MACOS_DESKTOP:
+        # Desktop mode saves PNGs to disk — text frames are intentionally empty.
+        from tpet.art.storage import has_macos_desktop_frames
+
+        if has_macos_desktop_frames(config.pet_data_dir, pet.name):
+            console.print(f"[green]{mode_label} art generated for {pet.name}! (10 frames saved)[/green]")
+        else:
+            console.print(f"[red]Failed to generate {mode_label} art.[/red]")
     else:
         console.print(f"[red]Failed to generate {mode_label} art.[/red]")
 
@@ -953,6 +956,14 @@ def main(
                     f"Est. cost: ${cost:.3f}[/dim]"
                 )
             _preview_frames(config, pet.name, len(frames))
+        elif config.art_mode == ArtMode.MACOS_DESKTOP:
+            # Desktop mode saves PNGs to disk — text frames are intentionally empty.
+            from tpet.art.storage import has_macos_desktop_frames
+
+            if has_macos_desktop_frames(config.pet_data_dir, pet.name):
+                console.print(f"[green]{mode_label} art generated for {pet.name}! (10 frames saved)[/green]")
+            else:
+                console.print(f"[red]Failed to generate {mode_label} art.[/red]")
         else:
             console.print(f"[red]Failed to generate {mode_label} art.[/red]")
         raise typer.Exit()

@@ -69,9 +69,7 @@ _SYSTEM_PROMPT = (
     "STATS: Generate stats that reflect the creature's personality. "
     "Each stat is an integer from 1-100. Choose values that make sense for the character — "
     "a chaotic creature should have high CHAOS, a patient one high PATIENCE, etc.\n"
-    "The 5 stats are: HUMOR, PATIENCE, CHAOS, WISDOM, SNARK\n\n"
-    + _LOCOMOTION_INSTRUCTIONS
-    + "\n"
+    "The 5 stats are: HUMOR, PATIENCE, CHAOS, WISDOM, SNARK\n\n" + _LOCOMOTION_INSTRUCTIONS + "\n"
     "IMPORTANT: Output ONLY a single JSON object with no markdown fencing, no explanation, "
     "and no extra text. The JSON must have these exact keys:\n"
     '- "name": string (creative creature name)\n'
@@ -657,9 +655,7 @@ def generate_pet(
 _LOCOMOTION_BACKFILL_SYSTEM_PROMPT = (
     "You are a creature designer filling in missing animation fields for an existing pet. "
     "You will be given the pet's name, creature type, personality, and backstory. "
-    "Produce four short descriptors used by an image-generation pipeline.\n\n"
-    + _LOCOMOTION_INSTRUCTIONS
-    + "\n"
+    "Produce four short descriptors used by an image-generation pipeline.\n\n" + _LOCOMOTION_INSTRUCTIONS + "\n"
     "IMPORTANT: Output ONLY a single JSON object with no markdown fencing, no explanation, "
     "and no extra text. The JSON must have these exact keys:\n"
     '- "body_plan": string\n'
