@@ -77,15 +77,13 @@ def _sprite_layout_instructions_10(pet: PetProfile) -> str:
     """
     body_plan = pet.body_plan.strip() or f"a {pet.creature_type}"
     walk = pet.walk_description.strip() or (
-        "Two-stride walk cycle facing right; pose A and pose B differ in stride only, "
-        "no horizontal mirroring."
+        "Two-stride walk cycle facing right; pose A and pose B differ in stride only, no horizontal mirroring."
     )
     fall = pet.fall_description.strip() or (
         "Airborne with limbs splayed and a startled expression — no ground under it."
     )
     landing = pet.landing_description.strip() or (
-        "Dazed on the ground: eyes as two small X shapes, 2-3 small yellow stars around its head, "
-        "mouth slightly open."
+        "Dazed on the ground: eyes as two small X shapes, 2-3 small yellow stars around its head, mouth slightly open."
     )
 
     return (
@@ -324,8 +322,8 @@ _EDIT_PROMPTS_10: dict[int, tuple[str, str]] = {
     9: (
         "landed",
         "Make the character look like it is landing in a way that matches its body:\n"
-        "- If it can fly (e.g. has wings, bird, dragon, fairy, bat, etc.): landed neatly on the ground with wings folded "
-        "against its body and a neutral settled expression (not dazed).\n"
+        "- If it can fly (e.g. has wings, bird, dragon, fairy, bat, etc.): landed neatly on the ground with wings "
+        "folded against its body and a neutral settled expression (not dazed).\n"
         "- If squishy or gooey (e.g., blob, slime, jelly, etc.): SPLATTED into a flat puddle, "
         "body flattened and spreading outward with a few droplets splashing to the sides.\n"
         "- If brittle or crystalline (crystal, glass, shell, rock, etc.): SHATTERED into five "
@@ -456,10 +454,7 @@ def _generate_gemini_sprite_frames_10(config: TpetConfig, pet: PetProfile) -> tu
     # the bg color, and use a generous tolerance to catch antialiased fringes.
     chroma_target = (255, 0, 255)
     chroma_tolerance = max(config.chroma_tolerance, 100)
-    frames = [
-        remove_chroma_key(f, tolerance=chroma_tolerance, target_color=chroma_target)
-        for f in frames
-    ]
+    frames = [remove_chroma_key(f, tolerance=chroma_tolerance, target_color=chroma_target) for f in frames]
 
     for i, frame in enumerate(frames):
         save_png_frame(config.pet_data_dir, pet.name, i, frame)
@@ -769,7 +764,9 @@ def _generate_openai_frames(
         full_edit_prompt = edit_prompt + opacity_guard
         logger.debug(
             "=== OpenAI edit prompt for frame %d (%s) ===\n%s\n=== end prompt ===",
-            frame_idx, label, full_edit_prompt,
+            frame_idx,
+            label,
+            full_edit_prompt,
         )
         _, usage = client.edit_sprite(
             image_path=edit_source,

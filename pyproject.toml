@@ -41,18 +41,18 @@ keywords = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "claude-agent-sdk>=0.1.66",
-    "pydantic>=2.13.3",
+    "claude-agent-sdk>=0.2.87",
+    "pydantic>=2.13.4",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
-    "typer>=0.24.2",
+    "typer>=0.26.3",
     "watchdog>=6.0.0",
     "xdg-base-dirs>=6.0.2",
-    "google-genai>=1.73.1",
+    "google-genai>=2.7.0",
     "pillow>=12.2.0",
-    "numpy>=2.4.4",
+    "numpy>=2.4.6",
     "python-dotenv>=1.2.2",
-    "openai>=2.32.0",
+    "openai>=2.38.0",
 ]
 packages = [
     "src/tpet",
@@ -80,7 +80,7 @@ build-backend = "hatchling.build"
 dev = [
     "pyright>=1.1.409",
     "pre-commit>=4.6.0",
-    "ruff>=0.15.11",
+    "ruff>=0.15.15",
     "pytest>=9.0.3",
     "pytest-timeout>=2.4.0",
     "pytest-cov>=7.1.0",
