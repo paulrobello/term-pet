@@ -159,6 +159,15 @@ Stats (HUMOR, PATIENCE, CHAOS, WISDOM, SNARK) are personality-driven — the LLM
 - Art prompts: `$XDG_CONFIG_HOME/tpet/<art_dir_path>/<pet-name>_prompt.txt`
 - API keys: `$XDG_CONFIG_HOME/tpet/.env` (loaded automatically via `python-dotenv`; env vars like `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`)
 
+## Releasing & Publishing
+
+Before triggering the **Publish to PyPI** workflow or running `make build`:
+
+1. **Check if the version needs a bump.** Compare the current version in `src/tpet/__init__.py` (`__version__`) against the latest published version on PyPI (`pip index versions term-pet`). If they match, bump the version first — PyPI rejects re-uploads of existing versions.
+2. **Update CHANGELOG.md** if present. Add a new section for the version with entries under appropriate headings (Added / Changed / Fixed / Removed).
+3. **Update README.md** if the release includes user-facing changes — new flags, changed defaults, new features, or breaking behavior.
+4. **Commit the version bump + docs changes** before pushing or triggering the publish workflow.
+
 ## Code Conventions
 
 - Python 3.13, `uv` for package management
