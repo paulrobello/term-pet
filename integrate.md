@@ -164,8 +164,10 @@ Python side (`src/tpet/renderer/macos_desktop.py`):
   ```python
   def close(self) -> None:
       if self._sock is not None:
-          try: self._sock.close()
-          finally: self._sock = None
+          try:
+              self._sock.close()
+          finally:
+              self._sock = None
       if self._child is not None and self._child.poll() is None:
           try:
               self._child.terminate()

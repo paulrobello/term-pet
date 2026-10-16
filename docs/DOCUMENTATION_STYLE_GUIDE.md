@@ -576,9 +576,7 @@ curl -X POST https://api.example.com/v1/resource \
 import requests
 
 response = requests.post(
-    "https://api.example.com/v1/resource",
-    headers={"Authorization": "Bearer token123"},
-    json={"field1": "value"}
+    "https://api.example.com/v1/resource", headers={"Authorization": "Bearer token123"}, json={"field1": "value"}
 )
 ```
 
