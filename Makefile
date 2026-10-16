@@ -1,4 +1,4 @@
-.PHONY: build package test lint fmt typecheck checkall clean pre-commit pre-commit-update test-ollama ollama-report test-ollama-art test-ollama-art-resume ollama-art-report desktop desktop-clean dev
+.PHONY: build package test lint lint-check fmt fmt-check typecheck checkall checkall-ci clean pre-commit pre-commit-update test-ollama ollama-report test-ollama-art test-ollama-art-resume ollama-art-report desktop desktop-clean dev
 
 build:
 	uv build
@@ -12,13 +12,21 @@ test:
 lint:
 	uv run ruff check --fix .
 
+lint-check:			# non-mutating lint, the form CI runs
+	uv run ruff check .
+
 fmt:
 	uv run ruff format .
+
+fmt-check:			# non-mutating format check, the form CI runs
+	uv run ruff format --check .
 
 typecheck:
 	uv run pyright
 
 checkall: fmt lint typecheck test
+
+checkall-ci: checkall fmt-check lint-check package
 
 pre-commit:			# run pre-commit checks on all files
 	pre-commit run --all-files

@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-make checkall     # Run all checks: format, lint, typecheck, test (use before commits)
+make checkall     # Run all checks: format, lint, typecheck, test (fast gate, use while iterating)
+make checkall-ci  # CI-parity gate: checkall + non-mutating fmt/lint checks + package (use before push)
 make test         # uv run pytest
 make lint         # uv run ruff check --fix .
 make fmt          # uv run ruff format .
