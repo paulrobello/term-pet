@@ -13,7 +13,8 @@ from rich.live import Live
 
 from tpet.animation.engine import PetAnimator
 from tpet.commentary.generator import get_session_usage, submit_comment, submit_idle_chatter
-from tpet.config import ArtMode
+from tpet.config import ArtMode, WatchSource
+from tpet.monitor.opencode_watcher import DEFAULT_DB_PATH, OpencodeWatcher
 from tpet.monitor.text_watcher import TextFileWatcher
 from tpet.monitor.watcher import SessionWatcher, encode_project_path
 from tpet.profile.storage import save_profile
@@ -83,6 +84,31 @@ def _build_renderer(config: TpetConfig, pet_name: str) -> object:
     return AsciiRenderer(config)
 
 
+def detect_watch_source(session_dir: Path, db_path: Path) -> str:
+    """Pick claude or opencode by whichever source saw activity most recently.
+
+    Args:
+        session_dir: Claude session directory for the project.
+        db_path: Path to the opencode SQLite database.
+
+    Returns:
+        ``"opencode"`` or ``"claude"``.
+    """
+    from tpet.monitor.opencode_watcher import newest_opencode_activity
+    from tpet.monitor.watcher import find_newest_session
+
+    claude_mtime: float | None = None
+    if session_dir.exists():
+        newest = find_newest_session(session_dir)
+        if newest:
+            claude_mtime = newest.stat().st_mtime
+
+    opencode_time = newest_opencode_activity(db_path)
+    if opencode_time is not None and (claude_mtime is None or opencode_time > claude_mtime):
+        return "opencode"
+    return "claude"
+
+
 def run_app(
     config: TpetConfig,
     pet: PetProfile,
@@ -90,6 +116,7 @@ def run_app(
     project_path: str,
     watch_dir: str | None = None,
     follow_file: str | None = None,
+    watch_source: WatchSource = WatchSource.AUTO,
     quiet: bool = False,
 ) -> None:
     """Run the main tpet application loop.
@@ -101,13 +128,14 @@ def run_app(
         project_path: Project directory being monitored.
         watch_dir: Optional override for session watch directory.
         follow_file: Optional path to a plain text file to follow instead of Claude sessions.
+        watch_source: Which session source to watch when not following a text file.
         quiet: If True, suppress informational messages printed before the live display starts.
     """
     console = Console()
 
     # Initialize watcher
     event_queue: Queue[SessionEvent] = Queue()
-    watcher: SessionWatcher | TextFileWatcher
+    watcher: SessionWatcher | TextFileWatcher | OpencodeWatcher
 
     if follow_file:
         file_path = Path(follow_file)
@@ -115,6 +143,9 @@ def run_app(
             console.print(f"[cyan]Following text file: {file_path}[/cyan]")
         watcher = TextFileWatcher(file_path=file_path, event_queue=event_queue)
     else:
+        if watch_source is WatchSource.TEXT:
+            raise SystemExit("--watch-source text requires --follow <file>")
+
         if watch_dir:
             session_dir = Path(watch_dir)
         else:
@@ -122,13 +153,28 @@ def run_app(
             encoded = encode_project_path(project_path)
             session_dir = claude_dir / encoded
 
-        if not session_dir.exists():
-            logger.warning("Session directory not found: %s", session_dir)
-            if not quiet:
-                console.print(f"[yellow]Session directory not found: {session_dir}[/yellow]")
-                console.print("[dim]Will watch for it to appear...[/dim]")
+        if watch_source is WatchSource.AUTO:
+            resolved = detect_watch_source(session_dir, DEFAULT_DB_PATH)
+            logger.info("Auto-detected watch source: %s", resolved)
+            watch_source = WatchSource(resolved)
 
-        watcher = SessionWatcher(session_dir=session_dir, event_queue=event_queue)
+        if watch_source is WatchSource.OPENCODE:
+            if not DEFAULT_DB_PATH.exists():
+                logger.warning("Opencode database not found: %s", DEFAULT_DB_PATH)
+                if not quiet:
+                    console.print(f"[yellow]Opencode database not found: {DEFAULT_DB_PATH}[/yellow]")
+                    console.print("[dim]Will watch for it to appear...[/dim]")
+            elif not quiet:
+                console.print(f"[cyan]Watching opencode database: {DEFAULT_DB_PATH}[/cyan]")
+            watcher = OpencodeWatcher(db_path=DEFAULT_DB_PATH, event_queue=event_queue, project_path=project_path)
+        else:
+            if not session_dir.exists():
+                logger.warning("Session directory not found: %s", session_dir)
+                if not quiet:
+                    console.print(f"[yellow]Session directory not found: {session_dir}[/yellow]")
+                    console.print("[dim]Will watch for it to appear...[/dim]")
+
+            watcher = SessionWatcher(session_dir=session_dir, event_queue=event_queue)
 
     # Determine frame count: use PNG frame count if available, else ASCII art count
     from tpet.art.storage import get_frame_count_png

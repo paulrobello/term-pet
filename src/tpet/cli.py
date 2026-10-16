@@ -18,6 +18,7 @@ from tpet.config import (
     LLMProvider,
     PipelineProviderConfig,
     TpetConfig,
+    WatchSource,
     load_config,
 )
 
@@ -552,6 +553,12 @@ def cmd_run(
     follow: Annotated[
         str | None, typer.Option("--follow", "-f", help="Follow a plain text file instead of Claude sessions")
     ] = None,
+    watch_source: Annotated[
+        WatchSource | None,
+        typer.Option(
+            "--watch-source", help="Session source to watch: claude, opencode, text (requires --follow), or auto"
+        ),
+    ] = None,
     commentary_provider: Annotated[
         LLMProvider | None,
         typer.Option("--commentary-provider", help="Commentary LLM provider"),
@@ -605,6 +612,24 @@ def cmd_run(
 
     # Handle --show-session: print resolved paths and exit
     if show_session:
+        if watch_source is WatchSource.OPENCODE:
+            from tpet.monitor.opencode_watcher import DEFAULT_DB_PATH, newest_opencode_activity
+
+            console.print(f"[cyan]Opencode database:[/cyan] {DEFAULT_DB_PATH}")
+            if not DEFAULT_DB_PATH.exists():
+                console.print("[yellow]  Database not found[/yellow]")
+            else:
+                activity = newest_opencode_activity(DEFAULT_DB_PATH)
+                if activity is None:
+                    console.print("[green]  Database exists (no messages)[/green]")
+                else:
+                    import datetime
+
+                    mtime = datetime.datetime.fromtimestamp(activity).strftime("%Y-%m-%d %H:%M:%S")
+                    console.print("[green]  Database exists[/green]")
+                    console.print(f"[cyan]Newest message:[/cyan] {mtime}")
+            raise typer.Exit()
+
         from tpet.monitor.watcher import encode_project_path, find_newest_session
 
         if follow:
@@ -652,6 +677,7 @@ def cmd_run(
         project_path=project_path,
         watch_dir=watch_dir,
         follow_file=follow,
+        watch_source=watch_source or WatchSource.AUTO,
         quiet=quiet,
     )
 
@@ -715,6 +741,12 @@ def main(
     watch_dir: Annotated[str | None, typer.Option("--watch-dir", "-w", help="Session watch directory override")] = None,
     follow: Annotated[
         str | None, typer.Option("--follow", "-f", help="Follow a plain text file instead of Claude sessions")
+    ] = None,
+    watch_source: Annotated[
+        WatchSource | None,
+        typer.Option(
+            "--watch-source", help="Session source to watch: claude, opencode, text (requires --follow), or auto"
+        ),
     ] = None,
     art_mode: Annotated[
         ArtMode | None,
@@ -804,6 +836,24 @@ def main(
 
     # Handle --show-session: print resolved paths and exit
     if show_session:
+        if watch_source is WatchSource.OPENCODE:
+            from tpet.monitor.opencode_watcher import DEFAULT_DB_PATH, newest_opencode_activity
+
+            console.print(f"[cyan]Opencode database:[/cyan] {DEFAULT_DB_PATH}")
+            if not DEFAULT_DB_PATH.exists():
+                console.print("[yellow]  Database not found[/yellow]")
+            else:
+                activity = newest_opencode_activity(DEFAULT_DB_PATH)
+                if activity is None:
+                    console.print("[green]  Database exists (no messages)[/green]")
+                else:
+                    import datetime
+
+                    mtime = datetime.datetime.fromtimestamp(activity).strftime("%Y-%m-%d %H:%M:%S")
+                    console.print("[green]  Database exists[/green]")
+                    console.print(f"[cyan]Newest message:[/cyan] {mtime}")
+            raise typer.Exit()
+
         from tpet.monitor.watcher import encode_project_path, find_newest_session
 
         if follow:
@@ -985,5 +1035,6 @@ def main(
         project_path=project_path,
         watch_dir=watch_dir,
         follow_file=follow,
+        watch_source=watch_source or WatchSource.AUTO,
         quiet=quiet,
     )

@@ -199,6 +199,15 @@ class BubblePlacement(StrEnum):
     BOTTOM = "bottom"
 
 
+class WatchSource(StrEnum):
+    """Which session source the live display watches."""
+
+    CLAUDE = "claude"
+    OPENCODE = "opencode"
+    TEXT = "text"
+    AUTO = "auto"
+
+
 # ---------------------------------------------------------------------------
 # Main config
 # ---------------------------------------------------------------------------

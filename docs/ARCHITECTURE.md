@@ -51,6 +51,7 @@ graph TB
     subgraph "Session Monitoring"
         WATCH[monitor/watcher.py - Watchdog]
         TXTWATCH[monitor/text_watcher.py - Text File]
+        OCWATCH[monitor/opencode_watcher.py - SQLite Poll]
         PARSE[monitor/parser.py - JSONL Parser]
     end
 
@@ -87,6 +88,7 @@ graph TB
         GEMINI[Gemini API]
         JSONL[Claude Code JSONL Files]
         TXTFILE[Plain Text Files]
+        OCDB[opencode.db - SQLite]
         YAML[~/.config/tpet/]
         ARTFILES[~/.config/tpet/art/]
     end
@@ -97,6 +99,7 @@ graph TB
     CLI --> ARTGEN
     APP --> WATCH
     APP --> TXTWATCH
+    APP --> OCWATCH
     APP --> ANIM
     APP --> PROTO
     PROTO --> RENDER
@@ -107,6 +110,8 @@ graph TB
     WATCH --> PARSE
     PARSE --> |SessionEvent| APP
     TXTWATCH --> |SessionEvent| APP
+    OCWATCH --> |SessionEvent| APP
+    OCWATCH --> OCDB
     COMGEN --> PROMPT
     COMGEN --> SDK
     COMGEN --> LLMCLI
@@ -185,6 +190,7 @@ src/tpet/
 │   ├── generator.py         # Pet creation via configurable LLM provider
 │   └── storage.py           # YAML save/load
 ├── monitor/
+│   ├── opencode_watcher.py  # opencode SQLite watcher (--watch-source opencode)
 │   ├── parser.py            # JSONL line → SessionEvent
 │   ├── text_watcher.py      # Plain text file watcher (--follow)
 │   └── watcher.py           # Claude Code JSONL watcher (default)
@@ -395,12 +401,13 @@ The generator includes:
 
 ### Session Monitoring
 
-tpet supports two input modes, selected at startup:
+tpet supports three input modes, selected at startup:
 
 - **Claude Code mode** (default) -- Watches JSONL session files via `SessionWatcher`
+- **opencode mode** (`--watch-source opencode`) -- Polls the opencode SQLite database via `OpencodeWatcher`
 - **Plain text mode** (`--follow`) -- Tails a single text file via `TextFileWatcher`
 
-Both watchers use watchdog for filesystem events and produce `SessionEvent` objects on a shared queue.
+The Claude and text watchers use watchdog for filesystem events; the opencode watcher polls the `session_message` table with a high-water-mark cursor on the time-ordered message id, scoped to the current project via a join on `session_v2.directory`. All three produce `SessionEvent` objects on a shared queue.
 
 #### Claude Code Mode
 

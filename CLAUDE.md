@@ -24,14 +24,14 @@ uv run tpet --debug
 
 **Entry point**: `tpet = "tpet.cli:app"` (Typer CLI, installed as `term-pet` on PyPI)
 
-The CLI uses subcommands (`tpet new`, `tpet details`, `tpet art`, `tpet run`) with a backward-compatible root callback that also accepts `--new`, `--details`, `--gen-art`, `--regen-art`, and `--reset` flags. Run mode (default) supports two input sources: Claude Code JSONL sessions (default) or plain text file following (`--follow`). Art mode is selected with `--art-mode` (`ascii`/`sixel-art`); `tpet art` generates and saves graphical frames using the configured image art provider (openai, openrouter, or gemini).
+The CLI uses subcommands (`tpet new`, `tpet details`, `tpet art`, `tpet run`) with a backward-compatible root callback that also accepts `--new`, `--details`, `--gen-art`, `--regen-art`, and `--reset` flags. Run mode (default) supports three input sources: Claude Code JSONL sessions (default), the opencode SQLite database (`--watch-source opencode`, or `auto` which picks the most recently active source), or a plain text file (`--follow`). Art mode is selected with `--art-mode` (`ascii`/`sixel-art`); `tpet art` generates and saves graphical frames using the configured image art provider (openai, openrouter, or gemini).
 
 Each pipeline (profile, commentary, image_art) has independent provider/model/API key configuration via `PipelineProviderConfig` on `TpetConfig`. Supported providers: `claude`, `ollama`, `openai`, `openrouter`, `gemini` (`LLMProvider` enum). Claude uses Agent SDK; all others use OpenAI-compatible or provider-specific SDKs.
 
 ### Core Loop (app.py)
 
 The live display runs at 4fps with this cycle:
-1. Drain `SessionEvent` queue from watchdog-based `SessionWatcher` or `TextFileWatcher`
+1. Drain `SessionEvent` queue from `SessionWatcher` (watchdog), `TextFileWatcher` (watchdog), or `OpencodeWatcher` (SQLite polling)
 2. Generate commentary via configured LLM provider if cooldown elapsed and budget remains
 3. Check for idle chatter when no events
 4. Advance `PetAnimator` state machine (IDLE→REACTING→SLEEPING)
@@ -40,7 +40,7 @@ The live display runs at 4fps with this cycle:
 ### Module Dependencies
 
 ```
-cli.py → app.py → SessionWatcher or TextFileWatcher (monitor/)
+cli.py → app.py → SessionWatcher / TextFileWatcher / OpencodeWatcher (monitor/)
                  → PetAnimator (animation/)
                  → submit_comment/submit_idle_chatter (commentary/)
                  → Renderer protocol (renderer/protocol.py)
@@ -52,7 +52,7 @@ cli.py → app.py → SessionWatcher or TextFileWatcher (monitor/)
 
 - **models/**: `PetProfile` (Pydantic), `Rarity` (StrEnum with stat_range/color/stars), `StatConfig`
 - **profile/**: Pet generation via configurable LLM provider (claude/ollama/openai/openrouter/gemini) + YAML storage
-- **monitor/**: Watchdog file watchers — `watcher.py` for JSONL sessions, `text_watcher.py` for plain text files, `parser.py` for JSONL parsing
+- **monitor/**: `watcher.py` (watchdog, JSONL sessions), `text_watcher.py` (watchdog, plain text files), `opencode_watcher.py` (polls the opencode SQLite database), `parser.py` for JSONL parsing
 - **commentary/**: Multi-provider comment generation (claude via Agent SDK, ollama/openai/openrouter via OpenAI-compat client, gemini via genai SDK) with prompt builders, `ThreadPoolExecutor`-based background generation, `SessionUsage` tracking
 - **llm_client.py**: Shared `create_openai_client()` factory and `generate_text_openai_compat()` helper used by commentary and profile pipelines for OpenAI-compatible providers
 - **renderer/**: `protocol.py` (Renderer protocol + `AsciiRenderer`, `HalfblockRenderer` implementations), `display.py` (Rich layouts for ASCII/halfblock), `card.py` (details card), `preview.py` (post-generation frame preview), `statbars.py` (stat bar rendering)
@@ -73,11 +73,11 @@ Critical Agent SDK options (used when provider is `claude`):
 ClaudeAgentOptions(
     model=resolved.model,
     system_prompt=prompt,
-    allowed_tools=[],        # No tool access
-    max_turns=1,             # Single turn for both commentary and pet generation
+    allowed_tools=[],  # No tool access
+    max_turns=1,  # Single turn for both commentary and pet generation
     permission_mode="dontAsk",
-    setting_sources=[],      # Prevent user plugins from loading
-    plugins=[],              # Prevent user plugins from loading
+    setting_sources=[],  # Prevent user plugins from loading
+    plugins=[],  # Prevent user plugins from loading
 )
 ```
 
@@ -123,7 +123,16 @@ Text file change → watchdog → _process_new_lines()
 → Rich Markdown speech bubble
 ```
 
-The JSONL parser filters aggressively: skips `tool_use`, `tool_result`, `progress`, `system`, and other noise types. Only actual user text and substantive assistant text become events. The text file watcher emits every non-blank line as an event.
+**opencode mode (`--watch-source opencode`):**
+```
+SQLite opencode.db → OpencodeWatcher poll (2s) → parse_message_row()
+→ SessionEvent(role, summary) → Queue → app loop → submit_comment()
+→ Future → ThreadPoolExecutor → _call_llm() → provider dispatch
+→ (Agent SDK / OpenAI-compat / Gemini) → _clean_comment()
+→ Rich Markdown speech bubble
+```
+
+The JSONL parser filters aggressively: skips `tool_use`, `tool_result`, `progress`, `system`, and other noise types. Only actual user text and substantive assistant text become events. The text file watcher emits every non-blank line as an event. The opencode watcher emits `user` and `text` typed messages (assistant prose); tool, reasoning, and synthetic parts are noise.
 
 The app loop tracks the last user event. When an assistant event triggers commentary, the preceding user prompt is included for context (e.g. "The developer said: X\nThe AI assistant responded: Y").
 
@@ -155,6 +164,7 @@ Stats (HUMOR, PATIENCE, CHAOS, WISDOM, SNARK) are personality-driven — the LLM
 - Project pet: `<project>/.tpet/profile.yaml`
 - Logs: `$XDG_CONFIG_HOME/tpet/debug.log` (file-only, never stdout)
 - Sessions monitored: `~/.claude/projects/{encoded-path}/{uuid}.jsonl`
+- opencode sessions: `~/.local/share/opencode/opencode.db` (watched with `--watch-source opencode`)
 - Art frames: `$XDG_CONFIG_HOME/tpet/<art_dir_path>/<pet-name>_frame_<N>.png` (source PNGs), `.hblk` (half-block) -- `art_dir_path` defaults to `art`
 - Art prompts: `$XDG_CONFIG_HOME/tpet/<art_dir_path>/<pet-name>_prompt.txt`
 - API keys: `$XDG_CONFIG_HOME/tpet/.env` (loaded automatically via `python-dotenv`; env vars like `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`)
