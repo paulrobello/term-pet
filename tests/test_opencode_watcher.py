@@ -293,13 +293,14 @@ class TestDetectWatchSource:
 
 class TestCliWatchSource:
     def test_run_help_lists_watch_source(self) -> None:
-        result = runner.invoke(app, ["run", "--help"])
+        # Rich truncates the option column at its default 80-col non-tty width, hiding --watch-source.
+        result = runner.invoke(app, ["run", "--help"], env={"COLUMNS": "200"})
 
         assert result.exit_code == 0
         assert "--watch-source" in result.stdout
 
     def test_root_help_lists_watch_source(self) -> None:
-        result = runner.invoke(app, ["--help"])
+        result = runner.invoke(app, ["--help"], env={"COLUMNS": "200"})
 
         assert result.exit_code == 0
         assert "--watch-source" in result.stdout
