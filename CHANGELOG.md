@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-16
+
+### Added
+
+- **Built-in opencode session watcher** (`--watch-source`) — `tpet` now monitors
+  [opencode](https://opencode.ai) sessions directly from its SQLite database
+  (`~/.local/share/opencode/opencode.db`), in addition to Claude Code JSONL sessions
+  and plain text files. `--watch-source` selects the source: `claude` (default),
+  `opencode`, `text` (requires `--follow`), or `auto` (picks whichever source was most
+  recently active). The watcher polls `session_message` with a high-water-mark cursor
+  every 2 seconds, emits only user prompts and assistant prose as commentary events
+  (tool calls, reasoning, and synthetic messages are filtered out), and scopes
+  monitoring to the current project directory when one is detected.
+
+### Changed
+
+- Upgraded all dependencies and GitHub Actions to their latest releases.
+- CI restructured to one job per concern (lint, typecheck, test on ubuntu + macos,
+  build) with per-job timeouts and concurrency cancellation on branch pushes. CI now
+  runs non-mutating format/lint checks via the new `make fmt-check` / `make lint-check`
+  targets, and `make checkall-ci` is the local CI-parity gate (documented in CLAUDE.md).
+
 ## [0.2.0] - 2026-05-29
 
 ### Added
