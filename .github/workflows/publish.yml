@@ -18,15 +18,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
@@ -52,7 +52,7 @@ jobs:
 
       - name: Restore cached build artifacts
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: dist
           key: ${{ runner.os }}-3.13-x64-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
@@ -70,7 +70,7 @@ jobs:
       - name: Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@0.4.0
         with:
           args: 'The project {{ EVENT_PAYLOAD.repository.full_name }} ${{ env.VERSION }} has been published to PyPI.'
         continue-on-error: true
