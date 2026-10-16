@@ -8,9 +8,10 @@ import sqlite3
 import time
 from datetime import UTC, datetime
 from queue import Queue
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
+from typer.main import get_command
 from typer.testing import CliRunner
 
 from tpet.cli import app
@@ -22,6 +23,8 @@ from tpet.monitor.opencode_watcher import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from click import Group
 
     from tpet.monitor.parser import SessionEvent
 
@@ -292,18 +295,18 @@ class TestDetectWatchSource:
 
 
 class TestCliWatchSource:
-    def test_run_help_lists_watch_source(self) -> None:
-        # Rich truncates the option column at its default 80-col non-tty width, hiding --watch-source.
-        result = runner.invoke(app, ["run", "--help"], env={"COLUMNS": "200"})
+    def test_run_declares_watch_source(self) -> None:
+        # Assert on declared params, not rendered --help: Rich's help rendering is
+        # environment-dependent (cell truncation at narrow widths, row cropping at
+        # console height 25 for non-tty output) and failed on CI at both 80 and 200.
+        run_cmd = cast("Group", get_command(app)).commands["run"]
 
-        assert result.exit_code == 0
-        assert "--watch-source" in result.stdout
+        assert "--watch-source" in {opt for param in run_cmd.params for opt in param.opts}
 
-    def test_root_help_lists_watch_source(self) -> None:
-        result = runner.invoke(app, ["--help"], env={"COLUMNS": "200"})
+    def test_root_declares_watch_source(self) -> None:
+        root_cmd = get_command(app)
 
-        assert result.exit_code == 0
-        assert "--watch-source" in result.stdout
+        assert "--watch-source" in {opt for param in root_cmd.params for opt in param.opts}
 
     def test_show_session_opencode(self, tmp_path: Path) -> None:
         result = runner.invoke(app, ["--watch-source", "opencode", "--show-session", "--config-dir", str(tmp_path)])
