@@ -341,7 +341,7 @@ Each pipeline has an independent `PipelineProviderConfig` that specifies the `pr
 |----------|-------------|-----------------|---------------|
 | Profile generation | `profile_provider_config` | `claude` | `claude-haiku-4-5` |
 | Commentary | `commentary_provider_config` | `claude` | `claude-haiku-4-5` |
-| Image art | `image_art_provider_config` | `openai` | `gpt-image-1.5` |
+| Image art | `image_art_provider_config` | `openai` | `gpt-image-2.6-sunburst` |
 
 **`PipelineProviderConfig`** fields (per pipeline):
 

@@ -35,7 +35,7 @@ class TestTpetConfig:
         # Image art defaults to OpenAI
         assert config.image_art_provider_config.provider == LLMProvider.OPENAI
         resolved = config.resolved_image_art_provider
-        assert resolved.model == "gpt-image-1.5"
+        assert resolved.model == "gpt-image-2.6-sunburst"
         assert resolved.is_openai_compat
 
     def test_config_dir_default(self) -> None:

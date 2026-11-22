@@ -320,7 +320,7 @@ commentary_provider_config:
 
 image_art_provider_config:
   provider: openai
-  model: gpt-image-1.5
+  model: gpt-image-2.6-sunburst
 
 # Timing
 comment_interval_seconds: 30
@@ -364,15 +364,20 @@ Each pipeline (`profile_provider_config`, `commentary_provider_config`, `image_a
 | `base_url` | string | *(provider default)* | API base URL override (empty = provider default) |
 | `api_key_env` | string | *(provider default)* | Environment variable name for the API key |
 
+Switching image providers with `--art-provider` uses the new provider’s defaults unless
+you also pass `--art-model`. Custom idle images (`--base-image`) require the OpenAI
+or OpenRouter image provider. If your config explicitly pins a retired model, remove
+the `model` setting to use the new default or set a supported model explicitly.
+
 Provider defaults:
 
 | Provider | Text default model | Image default model | Default base URL |
 |----------|-------------------|---------------------|------------------|
 | `claude` | `claude-haiku-4-5` | *(n/a)* | Agent SDK (no URL) |
 | `ollama` | `llama3.2` | *(n/a)* | `http://localhost:11434/v1` |
-| `openai` | `gpt-4o` | `gpt-image-1.5` | `https://api.openai.com/v1` |
+| `openai` | `gpt-4o` | `gpt-image-2.6-sunburst` | `https://api.openai.com/v1` |
 | `openrouter` | `anthropic/claude-haiku-4-5` | `openai/dall-e-3` | `https://openrouter.ai/api/v1` |
-| `gemini` | `gemini-2.5-flash` | `gemini-2.5-flash` | Google Genai client |
+| `gemini` | `gemini-2.5-flash` | `gemini-nano-banana-2.1` | Google Genai client |
 
 ### General configuration reference
 

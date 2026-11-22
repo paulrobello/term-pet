@@ -8,7 +8,9 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from openai import OpenAI
+from openai import OpenAI, omit
+
+from tpet.config import DEFAULT_OPENAI_IMAGE_MODEL
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -25,6 +27,7 @@ class ImageUsage:
     input_image_tokens: int = 0
     input_text_tokens: int = 0
     output_image_tokens: int = 0
+    image_output_rate: float = 30.0
 
     @property
     def total_tokens(self) -> int:
@@ -33,16 +36,16 @@ class ImageUsage:
 
     @property
     def estimated_cost_usd(self) -> float:
-        """Estimated cost in USD based on gpt-image-1.5 pricing.
+        """Estimated cost in USD for direct OpenAI image pricing.
 
         Rates (per 1M tokens):
             - Text input: $5
             - Image input: $8
-            - Image output: $32
+            - Image output: $30 for GPT Image 2.x, $32 for legacy estimates
         """
         text_input_cost = self.input_text_tokens * 5.0 / 1_000_000
         image_input_cost = self.input_image_tokens * 8.0 / 1_000_000
-        image_output_cost = self.output_image_tokens * 32.0 / 1_000_000
+        image_output_cost = self.output_image_tokens * self.image_output_rate / 1_000_000
         return text_input_cost + image_input_cost + image_output_cost
 
     def __iadd__(self, other: ImageUsage) -> ImageUsage:
@@ -71,7 +74,7 @@ class OpenAIImageClient:
 
     def __init__(
         self,
-        model: str = "gpt-image-1.5",
+        model: str = DEFAULT_OPENAI_IMAGE_MODEL,
         api_key: str | None = None,
         base_url: str | None = None,
     ) -> None:
@@ -97,8 +100,12 @@ class OpenAIImageClient:
             self._client = OpenAI(api_key=resolved_key)
         self._model = model
 
-    @staticmethod
-    def _extract_usage(result: object) -> ImageUsage:
+    @property
+    def image_output_rate(self) -> float:
+        """Estimated USD per million image output tokens."""
+        return 30.0 if self._model.startswith("gpt-image-2") else 32.0
+
+    def _extract_usage(self, result: object) -> ImageUsage:
         """Extract token usage from an API response.
 
         Args:
@@ -109,7 +116,7 @@ class OpenAIImageClient:
         """
         usage = getattr(result, "usage", None)
         if usage is None:
-            return ImageUsage()
+            return ImageUsage(image_output_rate=self.image_output_rate)
 
         input_details = getattr(usage, "input_tokens_details", None)
         output_details = getattr(usage, "output_tokens_details", None)
@@ -119,6 +126,7 @@ class OpenAIImageClient:
             input_image_tokens=getattr(input_details, "image_tokens", 0) if input_details else 0,
             input_text_tokens=getattr(input_details, "text_tokens", 0) if input_details else 0,
             output_image_tokens=getattr(output_details, "image_tokens", 0) if output_details else 0,
+            image_output_rate=self.image_output_rate,
         )
 
     def generate_sprite(
@@ -183,7 +191,7 @@ class OpenAIImageClient:
     ) -> tuple[Path, ImageUsage]:
         """Edit an existing image to create a variant using images.edit.
 
-        Uses input_fidelity="high" to keep the output as close to the
+        Uses explicit high fidelity on legacy models to keep the output close to the
         input as possible, changing only what the prompt describes.
 
         Args:
@@ -217,8 +225,8 @@ class OpenAIImageClient:
                     quality=quality,
                     background="transparent",
                     output_format="png",
-                    input_fidelity="high",
                     n=1,
+                    input_fidelity=omit if self._model.startswith("gpt-image-2") else "high",
                 )
         except Exception as exc:
             raise RuntimeError(f"OpenAI edit API call failed: {exc}") from exc

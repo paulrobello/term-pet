@@ -109,7 +109,7 @@ profile_provider_config:
 # Image art requires openai, openrouter, or gemini (Ollama cannot generate images)
 # image_art_provider_config:
 #   provider: openai
-#   model: "gpt-image-1.5"
+#   model: "gpt-image-2.6-sunburst"
 ```
 
 When `provider` is set to `ollama`, the `base_url` defaults to `http://localhost:11434/v1` and `api_key_env` is not required. The default model is `llama3.2` if no model is specified. You only need to specify fields you want to override.
@@ -124,7 +124,7 @@ tpet run --commentary-provider ollama --commentary-model mistral-small:latest
 tpet new --profile-provider ollama --profile-model mistral-small:latest
 
 # Image art requires an image-capable provider
-tpet art --art-provider openai --art-model gpt-image-1.5
+tpet art --art-provider openai --art-model gpt-image-2.6-sunburst
 ```
 
 The commentary and profile pipelines use the `generate_text_openai_compat()` function in `src/tpet/llm_client.py`, which creates an OpenAI-compatible client for Ollama, OpenAI, and OpenRouter. The Claude provider uses the Agent SDK directly, and Gemini uses the Google genai SDK.

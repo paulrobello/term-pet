@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from google import genai
 from google.genai import types as gx
 
+from tpet.config import DEFAULT_GEMINI_IMAGE_MODEL
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -21,7 +23,7 @@ class GeminiImageClient:
     Uses the GEMINI_API_KEY environment variable for authentication.
     """
 
-    def __init__(self, model: str = "gemini-3.1-flash-image-preview", api_key: str | None = None) -> None:
+    def __init__(self, model: str = DEFAULT_GEMINI_IMAGE_MODEL, api_key: str | None = None) -> None:
         """Initialize the Gemini image client.
 
         Args:
@@ -117,6 +119,8 @@ class GeminiImageClient:
 
         parts = getattr(content, "parts", [])
         for part in parts:
+            if getattr(part, "thought", False):
+                continue
             inline_data = getattr(part, "inline_data", None)
             if inline_data and hasattr(inline_data, "data") and inline_data.data:
                 images.append(inline_data.data)

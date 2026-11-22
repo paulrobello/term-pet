@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 # Pipeline type determines which model default to use (text vs image)
 PipelineType = Literal["text", "image"]
 
+DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-2.6-sunburst"
+DEFAULT_GEMINI_IMAGE_MODEL = "gemini-nano-banana-2.1"
+
 
 class LLMProvider(StrEnum):
     """Supported LLM providers."""
@@ -74,7 +77,7 @@ _PROVIDER_DEFAULTS: dict[tuple[LLMProvider, PipelineType], dict[str, str]] = {
         "api_key_env": "OPENAI_API_KEY",
     },
     (LLMProvider.OPENAI, "image"): {
-        "model": "gpt-image-1.5",
+        "model": DEFAULT_OPENAI_IMAGE_MODEL,
         "base_url": "https://api.openai.com/v1",
         "api_key_env": "OPENAI_API_KEY",
     },
@@ -96,7 +99,7 @@ _PROVIDER_DEFAULTS: dict[tuple[LLMProvider, PipelineType], dict[str, str]] = {
         "api_key_env": "GEMINI_API_KEY",
     },
     (LLMProvider.GEMINI, "image"): {
-        "model": "gemini-3.1-flash-image-preview",
+        "model": DEFAULT_GEMINI_IMAGE_MODEL,
         "base_url": "",
         "api_key_env": "GEMINI_API_KEY",
     },

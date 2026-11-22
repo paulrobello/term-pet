@@ -264,7 +264,7 @@ def _build_base_frame_prompt(pet: PetProfile, prompt_override: str = "") -> str:
 
 
 # Edit prompts: each describes ONLY the change from the base idle frame.
-# input_fidelity="high" handles keeping everything else identical.
+# The image edit should preserve everything else.
 # Blink frames (2, 3) are NOT generated via AI — they are created
 # programmatically by compositing closed-eye pixels from the sleep frame
 # onto the idle frames. This avoids the OpenAI edit API introducing
@@ -515,14 +515,10 @@ def generate_macos_desktop_art(
     from tpet.art.openai_client import GenerationResult  # noqa: F401  # re-exported for type
     from tpet.config import LLMProvider
 
+    validate_base_image_provider(config, base_image_path)
     resolved = config.resolved_image_art_provider
 
     if resolved.provider == LLMProvider.GEMINI:
-        if base_image_path is not None:
-            raise ValueError(
-                "--base-image is not supported for macos-desktop with Gemini. "
-                "Use OpenAI/OpenRouter provider if you need to supply your own idle frame."
-            )
         _generate_gemini_sprite_frames_10(config, pet)
         return [], None
 
@@ -625,7 +621,7 @@ def _generate_openai_frames(
     """Generate individual frames via OpenAI: base generate + edits + programmatic blinks.
 
     Uses images.generate for the base idle frame, then images.edit with
-    input_fidelity="high" for each variant in ``edit_prompts``. Blink frames
+    high input fidelity for each variant in ``edit_prompts``. Blink frames
     (2, 3) are always created programmatically by compositing closed-eye pixels
     from the sleep frame onto the idle frames.
 
@@ -656,11 +652,11 @@ def _generate_openai_frames(
     from tpet.art.process import create_blink_frame
 
     result = GenerationResult()
-    total_usage = ImageUsage()
     art_dir = get_art_dir(config.pet_data_dir)
     safe_name = _sanitize_name(pet.name)
     resolved = config.resolved_image_art_provider
     client = OpenAIImageClient(model=resolved.model, api_key=resolved.api_key, base_url=resolved.base_url or None)
+    total_usage = ImageUsage(image_output_rate=client.image_output_rate)
 
     if base_image_path is not None:
         # Use the user-provided image as frame 0 — skip generation and cleanup
@@ -863,6 +859,14 @@ def generate_halfblock_art_openai(
 # ---------------------------------------------------------------------------
 
 
+def validate_base_image_provider(config: TpetConfig, base_image_path: Path | None) -> None:
+    """Reject an unsupported base image before using a provider key or writing frames."""
+    from tpet.config import LLMProvider
+
+    if base_image_path is not None and config.image_art_provider_config.provider == LLMProvider.GEMINI:
+        raise ValueError("--base-image is not supported with Gemini. Use the OpenAI or OpenRouter image provider.")
+
+
 def generate_art(
     config: TpetConfig,
     pet: PetProfile,
@@ -873,8 +877,7 @@ def generate_art(
 
     Dispatches to the appropriate generator based on art_mode and the resolved
     image art provider.  When ``base_image_path`` is provided, the OpenAI-compatible
-    pipeline is always used (regardless of provider) since only the OpenAI images
-    edit API supports image editing.
+    pipeline is required since this app uses the OpenAI images edit API for it.
 
     Args:
         config: Application configuration.
@@ -892,6 +895,7 @@ def generate_art(
     """
     from tpet.config import ArtMode, LLMProvider
 
+    validate_base_image_provider(config, base_image_path)
     resolved = config.resolved_image_art_provider
 
     # Providers that cannot generate images
@@ -915,12 +919,8 @@ def generate_art(
             f"Set it in your environment or add it to {config_dir / '.env'}"
         )
 
-    # Determine pipeline: OpenAI-compatible (openai/openrouter) or Gemini
-    # Force OpenAI-compatible pipeline when a base image is provided
-    use_openai_compat = resolved.is_openai_compat or base_image_path is not None
-
     if config.art_mode == ArtMode.SIXEL_ART:
-        if use_openai_compat:
+        if resolved.is_openai_compat:
             return generate_halfblock_art_openai(
                 config,
                 pet,

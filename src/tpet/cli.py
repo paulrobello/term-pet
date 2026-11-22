@@ -188,20 +188,28 @@ def _apply_overrides(
             }
         )
 
-    image_art_cfg_overrides: dict[str, object] = {}
-    if image_art_provider:
-        image_art_cfg_overrides["provider"] = image_art_provider
+    image_config = config.image_art_provider_config
+    if image_art_provider is not None and image_art_provider != image_config.provider:
+        # Provider-specific model, endpoint and key source must not cross providers.
+        image_config = PipelineProviderConfig(provider=image_art_provider)
     if image_art_model:
-        image_art_cfg_overrides["model"] = image_art_model
-    if image_art_cfg_overrides:
-        overrides["image_art_provider_config"] = PipelineProviderConfig(
-            **{
-                **config.image_art_provider_config.model_dump(),
-                **image_art_cfg_overrides,
-            }
-        )
+        image_config = image_config.model_copy(update={"model": image_art_model})
+    if image_config is not config.image_art_provider_config:
+        overrides["image_art_provider_config"] = image_config
 
     return config.model_copy(update=overrides) if overrides else config
+
+
+def _check_base_image_provider(config: TpetConfig, base_image: Path | None) -> None:
+    if base_image is None:
+        return
+    from tpet.art.generator import validate_base_image_provider
+
+    try:
+        validate_base_image_provider(config, base_image)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from None
 
 
 def _resolve_project_pet(config: TpetConfig, project: str | None) -> tuple[TpetConfig, Path, PetProfile | None]:
@@ -384,7 +392,7 @@ def cmd_art(
         Path | None,
         typer.Option(
             "--base-image",
-            help="Path to a custom image to use as the idle frame instead of generating one (forces OpenAI edits)",
+            help="Path to a custom image to use as the idle frame instead of generating one (OpenAI/OpenRouter only)",
         ),
     ] = None,
     recrop: Annotated[
@@ -407,7 +415,6 @@ def cmd_art(
     """Generate graphical art for the current pet."""
     cfg_dir = Path(config_dir) if config_dir else None
     config = _build_config(cfg_dir)
-    _load_env(config.config_dir)
     config = _apply_overrides(
         config,
         comment_interval=None,
@@ -421,6 +428,9 @@ def cmd_art(
         image_art_provider=image_art_provider,
         image_art_model=image_art_model,
     )
+    if not recrop and not rechroma:
+        _check_base_image_provider(config, base_image)
+    _load_env(config.config_dir)
     _setup_logging(config, debug, verbose, console_output=debug)
 
     # Validate base image if provided
@@ -768,7 +778,7 @@ def main(
         Path | None,
         typer.Option(
             "--base-image",
-            help="Path to a custom image to use as the idle frame instead of generating one (forces OpenAI edits)",
+            help="Path to a custom image to use as the idle frame instead of generating one (OpenAI/OpenRouter only)",
         ),
     ] = None,
     bubble_placement: Annotated[
@@ -794,9 +804,6 @@ def main(
     # Load config
     cfg_dir = Path(config_dir) if config_dir else None
     config = _build_config(cfg_dir)
-
-    # Load .env unconditionally so API keys are available in all modes
-    _load_env(config.config_dir)
 
     # Apply CLI overrides via model_copy so Pydantic validation runs on the new values
     config = _apply_overrides(
@@ -827,6 +834,10 @@ def main(
     if dry_run:
         console.print("[green]Config is valid.[/green]")
         raise typer.Exit()
+
+    if not show_session and not reset:
+        _check_base_image_provider(config, base_image)
+    _load_env(config.config_dir)
 
     # Setup logging
     _setup_logging(config, debug, verbose)
